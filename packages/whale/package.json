@@ -1,0 +1,29 @@
+{
+  "name": "bc-whale-manager",
+  "version": "0.2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/SchulzOli/bc-whale.git", "directory": "packages/whale" },
+  "description": "whale: guided CLI and MCP server that sets up, updates, checks and explains the bc-whale tool catalog.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "whale": "dist/cli.js",
+    "whale-mcp": "dist/mcp.js"
+  },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test \"dist/**/*.test.js\"",
+    "mcp": "node dist/mcp.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "commander": "^15.0.0",
+    "jsonc-parser": "^3.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}

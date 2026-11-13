@@ -39,18 +39,22 @@ const enums = {
 const fields = new Set(["id", "kind", "category", "status", "owner", "source", "path", "description", "documentation",
   "access", "auth", "prerequisites", "inputs", "setup", "mcp", "update", "verify", "gaps"]);
 const commandList = (value) => Array.isArray(value) && value.length > 0 && value.every(text);
+// whale executes setup/update commands, so only the Copilot plugin lifecycle is allowed.
+const executable = (value) => value === undefined || value.every((command) => /^copilot plugin [a-z][\w@./ -]*$/i.test(command));
 
 function validateStep(entry, name) {
   const step = entry[name];
   requireValue(step && typeof step === "object", `${entry.id}: missing ${name}`);
   requireValue(Object.keys(step).every((key) => ["commands", "description"].includes(key)), `${entry.id}: unknown ${name} field`);
   requireValue(commandList(step.commands) || text(step.description), `${entry.id}: ${name} needs commands or description`);
+  if (name === "update") requireValue(executable(step.commands), `${entry.id}: update commands must be 'copilot plugin ...'`);
 }
 
 function validateConnection(entry) {
   if (entry.setup !== undefined) {
     requireValue(["copilot-plugin", "mcp-local", "manual"].includes(entry.setup.method), `${entry.id}: invalid setup method`);
     requireValue(commandList(entry.setup.commands) || text(entry.setup.note), `${entry.id}: setup needs commands or note`);
+    requireValue(executable(entry.setup.commands), `${entry.id}: setup commands must be 'copilot plugin ...'`);
   }
   if (entry.mcp !== undefined) {
     const { mcp } = entry;

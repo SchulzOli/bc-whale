@@ -7,12 +7,16 @@
       "id": "whale",
       "kind": "internal-plugin",
       "category": "management",
-      "status": "planned",
+      "status": "core",
       "owner": "bc-whale maintainers",
+      "path": "packages/whale",
       "description": "Guided CLI and MCP server that sets up, updates, checks and explains every tool in this catalog.",
-      "documentation": "docs/ROADMAP.md",
+      "documentation": "packages/whale/README.md",
       "access": "read-write",
-      "auth": "none"
+      "auth": "none",
+      "setup": { "method": "copilot-plugin", "commands": ["copilot plugin marketplace add SchulzOli/bc-whale", "copilot plugin install whale@bc-whale"] },
+      "update": { "commands": ["copilot plugin marketplace update bc-whale", "copilot plugin update whale@bc-whale"] },
+      "verify": { "description": "MCP server whale lists whale_* tools; whale_doctor reports the prerequisites." }
     },
     {
       "id": "bc-whale",

@@ -30,11 +30,14 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             packages/bc-whale/package-lock.json
+            packages/whale/package-lock.json
       - name: Install build dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install bc-whale dependencies
         run: npm --prefix packages/bc-whale ci --ignore-scripts --no-audit --no-fund
+      - name: Install whale dependencies
+        run: npm --prefix packages/whale ci --ignore-scripts --no-audit --no-fund
       - name: Validate, package and test
         run: npm run verify
       - name: Reject stale packaged runtime
-        run: git diff --exit-code -- packages/bc-whale/runtime
+        run: git diff --exit-code -- packages/bc-whale/runtime packages/whale/runtime

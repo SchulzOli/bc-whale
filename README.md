@@ -11,11 +11,10 @@ update cadence. bc-whale is the wrapper around all of it:
   access declared the same way for each one;
 - **own tools** that fill the gaps the others leave open, starting with the
   `bc_whale` MCP server for the AL development life cycle;
-- a planned **`whale` manager** (guided CLI + MCP server) so an agent or a human can
+- the **`whale` manager** (guided CLI + MCP server) so an agent or a human can
   install, update, check and explain the whole toolset from one entry point.
 
-> Status: early. The catalog and `bc_whale` work today; the `whale` manager is
-> planned — see the [roadmap](docs/ROADMAP.md).
+> Status: early (0.x). See the [roadmap](docs/ROADMAP.md).
 
 ## Two kinds of tools
 
@@ -31,7 +30,7 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 
 | Tool | Kind | Category | Status | What it is for |
 | --- | --- | --- | --- | --- |
-| `whale` | own | management | planned | Guided setup, update and overview of everything below |
+| [`whale`](packages/whale/README.md) | own | management | core | Guided setup, update and overview of everything below |
 | [`bc-whale`](packages/bc-whale/README.md) | own | AL lifecycle | core | Symbols, multi-app build, publish, test, containers, cloud sandboxes, diagnostics evidence, profiling |
 | [AL MCP](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/al-agent-tools/al-mcp-server) | MCP | AL lifecycle | core | Official symbol search, relations, diagnostics, compile |
 | [Microsoft Learn](https://learn.microsoft.com/en-us/training/support/mcp) | MCP | knowledge | core | Official docs and code samples |
@@ -50,18 +49,24 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 | [Superpowers](https://github.com/obra/superpowers) | plugin | workflow | optional | Brainstorm, plan, TDD, debug, review workflows |
 | [Graph Enterprise](https://learn.microsoft.com/en-us/graph/mcp-server/overview) | MCP | azure | experimental | Read-only directory queries (preview) |
 
-## Quick start (today)
+## Quick start
 
 Requires a Copilot client with Agent Plugins 1.0 support and Node.js 22+.
 
 ```powershell
 copilot plugin marketplace add SchulzOli/bc-whale
-copilot plugin install bc-whale@bc-whale
+copilot plugin install whale@bc-whale
 ```
 
-For third-party tools, follow the `setup` / `mcp` block of their entry in
-[catalog.json](catalog.json) until `whale setup` automates it.
+Then ask your agent to "set up the recommended Business Central tools with whale",
+or use the CLI from the installed plugin (or a checkout):
 
+```powershell
+whale doctor                    # prerequisites
+whale setup                     # guided: profile, tools, hosts, plan, confirm
+whale status                    # what is configured where
+whale update --check            # latest upstream releases
+```
 ## Develop
 
 ```powershell

@@ -20,7 +20,7 @@ without tool-specific code. `npm run validate` enforces this contract;
 | `auth` | always | `none`, `host-oauth`, `host-credentials`, `api-key-env`, `azure-cli`. |
 | `source` | external | HTTPS upstream (repository or product page). |
 | `path` | own, not planned | Repository-relative package folder. |
-| `setup` | unless `mcp` | `method` (`copilot-plugin`, `mcp-local`, `manual`) plus `commands` or `note`. |
+| `setup` | unless `mcp` | `method` (`copilot-plugin`, `mcp-local`, `manual`) plus `commands` or `note`. Commands must be `copilot plugin ...`; `whale` runs them. |
 | `mcp` | unless `setup` | Host-neutral MCP definition: `stdio` (`command`, `args`) or `http` (`url`, HTTPS). |
 | `inputs` | when used | `UPPER_CASE` placeholders referenced as `{{NAME}}` in `mcp`. |
 | `update` | not planned | `commands` or `description` of how the tool is updated. |

