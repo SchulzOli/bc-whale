@@ -8,7 +8,7 @@ const ids = (tools: { id: string }[]) => tools.map((tool) => tool.id);
 test("profiles select by status and include lower tiers", () => {
   assert.deepEqual(ids(selectTools(catalog, { profile: "core" })), ["whale", "bc-whale", "al-mcp", "microsoft-learn"]);
   const recommended = ids(selectTools(catalog, { profile: "recommended" }));
-  for (const id of ["whale", "bc-whale", "bcquality", "al-design-patterns", "github"]) assert.ok(recommended.includes(id), id);
+  for (const id of ["whale", "bc-whale", "bcquality", "al-design-patterns", "bc-atlas", "github"]) assert.ok(recommended.includes(id), id);
   assert.ok(!recommended.includes("markitdown"));
   const full = ids(selectTools(catalog, { profile: "full" }));
   assert.ok(full.includes("markitdown") && !full.includes("microsoft-graph-enterprise"));
@@ -27,4 +27,8 @@ test("plugin names come from the install command", () => {
   assert.equal(pluginName(byId("superpowers")), "superpowers");
   assert.equal(pluginName(byId("whale")), "whale");
   assert.equal(pluginName(byId("microsoft-learn")), undefined);
+});
+
+test("oli-tech tools are grouped by section", () => {
+  assert.deepEqual(catalog.tools.filter((tool) => tool.section === "oli-tech").map((tool) => tool.id).sort(), ["al-design-patterns", "bc-atlas", "bc-lantern"]);
 });

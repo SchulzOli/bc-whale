@@ -69,6 +69,11 @@ test("plan covers mcp, plugin, manual and blocked steps", () => withHome(async (
   assert.match(result.planHash, /^[0-9a-f]{64}$/);
 }));
 
+test("CLI-only tools become manual steps with their install note", () => withHome(async (home) => {
+  const result = await plan({ tools: tools("bc-lantern"), hosts: ["copilot"], home });
+  assert.deepEqual(result.steps.map((s) => [s.action, s.detail]), [["manual", "pipx install bc-lantern"]]);
+}));
+
 test("plan skips installed plugins and registered marketplaces", () => withHome(async (home) => {
   const { runner } = fakeRunner({ plugins: "  • whale@bc-whale (v0.2.0)\n", marketplaces: "  • superpowers-marketplace (GitHub: obra/superpowers-marketplace)\n" });
   const result = await plan({ tools: tools("whale", "superpowers"), hosts: ["copilot"], home, runner });

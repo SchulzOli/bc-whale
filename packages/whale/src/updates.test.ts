@@ -12,6 +12,8 @@ const tool = (id: string) => findTool(catalog, id);
 test("derives the upstream package from npx/uvx arguments or the GitHub source", () => {
   assert.deepEqual(upstreamOf(tool("playwright")), { source: "npm", package: "@playwright/mcp" });
   assert.deepEqual(upstreamOf(tool("al-design-patterns")), { source: "npm", package: "@oliexe12/al-design-patterns" });
+  assert.deepEqual(upstreamOf(tool("bc-atlas")), { source: "npm", package: "bc-atlas" });
+  assert.deepEqual(upstreamOf(tool("bc-lantern")), { source: "github", package: "SchulzOli/bc-lantern" });
   assert.deepEqual(upstreamOf(tool("markitdown")), { source: "pypi", package: "markitdown-mcp" });
   assert.deepEqual(upstreamOf(tool("bcquality")), { source: "github", package: "microsoft/BCQuality" });
   assert.deepEqual(upstreamOf(tool("microsoft-learn")), { source: "none" });

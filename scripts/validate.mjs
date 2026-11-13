@@ -30,13 +30,14 @@ function localPath(root, path) {
 }
 
 const enums = {
-  kind: ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp"],
+  kind: ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp", "external-cli"],
   category: ["management", "al-lifecycle", "bc-data", "quality", "knowledge", "devops", "azure", "testing", "workflow"],
   status: ["core", "recommended", "optional", "experimental", "planned"],
   access: ["read-only", "read-write", "destructive"],
   auth: ["none", "host-oauth", "host-credentials", "api-key-env", "azure-cli"],
 };
-const fields = new Set(["id", "kind", "category", "status", "owner", "source", "path", "description", "documentation",
+const sections = ["oli-tech"];
+const fields = new Set(["id", "kind", "section", "category", "status", "owner", "source", "path", "description", "documentation",
   "access", "auth", "prerequisites", "inputs", "setup", "mcp", "update", "verify", "gaps"]);
 const commandList = (value) => Array.isArray(value) && value.length > 0 && value.every(text);
 // whale executes setup/update commands, so only the Copilot plugin lifecycle is allowed.
@@ -90,6 +91,7 @@ export function validateLibrary(root) {
     for (const [field, allowed] of Object.entries(enums)) {
       requireValue(allowed.includes(entry[field]), `${entry.id}: invalid ${field} ${entry[field]}`);
     }
+    requireValue(entry.section === undefined || sections.includes(entry.section), `${entry.id}: invalid section ${entry.section}`);
     if (!https(entry.documentation)) localPath(root, entry.documentation);
     if (entry.status === "planned") {
       requireValue(entry.path === undefined, `${entry.id}: planned tools must not declare a path`);

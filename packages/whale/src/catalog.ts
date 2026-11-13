@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type Kind = "internal-plugin" | "external-plugin" | "external-marketplace" | "external-mcp";
+export type Kind = "internal-plugin" | "external-plugin" | "external-marketplace" | "external-mcp" | "external-cli";
 export type Status = "core" | "recommended" | "optional" | "experimental" | "planned";
 export type Profile = "core" | "recommended" | "full";
 
@@ -21,6 +21,7 @@ export interface Step {
 export interface Tool {
   id: string;
   kind: Kind;
+  section?: "oli-tech";
   category: string;
   status: Status;
   owner: string;
@@ -104,7 +105,7 @@ export function pluginName(tool: Tool): string | undefined {
 
 export function explain(tool: Tool): string {
   const lines = [
-    `${tool.id} (${tool.kind}, ${tool.category}, ${tool.status})`,
+    `${tool.id} (${tool.kind}, ${tool.category}, ${tool.status}${tool.section ? `, ${tool.section}` : ""})`,
     tool.description,
     `Owner: ${tool.owner}${tool.source ? ` - ${tool.source}` : ""}`,
     `Access: ${tool.access} · Auth: ${tool.auth}`,

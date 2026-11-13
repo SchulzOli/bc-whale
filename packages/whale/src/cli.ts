@@ -46,7 +46,7 @@ function parseInputs(values: string[] = []): Record<string, string> {
 
 program.command("list").description("All catalog tools").action(() => {
   const { tools } = catalog();
-  print(tools, () => table([["ID", "KIND", "CATEGORY", "STATUS", "DESCRIPTION"], ...tools.map((t) => [t.id, t.kind, t.category, t.status, t.description])]));
+  print(tools, () => table([["ID", "KIND", "SECTION", "CATEGORY", "STATUS", "DESCRIPTION"], ...tools.map((t) => [t.id, t.kind, t.section ?? "", t.category, t.status, t.description])]));
 });
 
 program.command("explain <id>").description("How a tool is set up, updated, verified and what it covers").action((id: string) => {

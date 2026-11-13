@@ -35,7 +35,6 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 | [AL MCP](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/al-agent-tools/al-mcp-server) | MCP | AL lifecycle | core | Official symbol search, relations, diagnostics, compile |
 | [Microsoft Learn](https://learn.microsoft.com/en-us/training/support/mcp) | MCP | knowledge | core | Official docs and code samples |
 | [BCQuality](https://github.com/microsoft/BCQuality) | plugin | quality | recommended | BC quality rules, AL code review, knowledge skills |
-| [AL Design Patterns](https://github.com/SchulzOli/ALDesignPatterns) | MCP | knowledge | recommended | Search, compare and recommend AL design patterns |
 | [GitHub](https://github.com/github/github-mcp-server) | MCP | devops | recommended | Repos, PRs, issues, AL-Go Actions |
 | [Business Central](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/ai/use-mcp-server-in-vscode) | MCP | BC data | optional | BC Online business data and API actions |
 | [Azure DevOps](https://github.com/microsoft/azure-devops-mcp) | MCP | devops | optional | Boards, repos, pipelines, test plans |
@@ -46,6 +45,17 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 | [Awesome Copilot](https://github.com/github/awesome-copilot) | marketplace | workflow | optional | Community plugins — pick individually |
 | [Superpowers](https://github.com/obra/superpowers) | plugin | workflow | optional | Brainstorm, plan, TDD, debug, review workflows |
 | [Graph Enterprise](https://learn.microsoft.com/en-us/graph/mcp-server/overview) | MCP | azure | experimental | Read-only directory queries (preview) |
+
+### oli-tech
+
+Tools by the bc-whale author, maintained in their own repositories and wired in like
+any other third-party tool (`"section": "oli-tech"` in the catalog).
+
+| Tool | Kind | Category | Status | What it is for |
+| --- | --- | --- | --- | --- |
+| [BC Atlas](https://github.com/SchulzOli/BC-Atlas) | MCP + CLI + VS Code | quality | recommended | Architecture diagrams, dependency views, health checks and docs from AL source |
+| [AL Design Patterns](https://github.com/SchulzOli/ALDesignPatterns) | MCP + CLI | knowledge | recommended | Search, compare and recommend AL design patterns |
+| [BC Lantern](https://github.com/SchulzOli/bc-lantern) | CLI | devops | optional | Collect app.json manifests across GitHub and report object-range usage and conflicts |
 
 ## Quick start
 

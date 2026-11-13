@@ -30,7 +30,7 @@ const reviewed = new Map<string, PlanOptions>();
 server.registerTool("whale_list", {
   description: "List every catalog tool with kind, category, status and description.",
   annotations: { readOnlyHint: true },
-}, async () => json(catalog().tools.map(({ id, kind, category, status, description }) => ({ id, kind, category, status, description }))));
+}, async () => json(catalog().tools.map(({ id, kind, section, category, status, description }) => ({ id, kind, section, category, status, description }))));
 
 server.registerTool("whale_explain", {
   description: "Explain one tool: purpose, access, auth, setup, update, verify, gaps and docs.",

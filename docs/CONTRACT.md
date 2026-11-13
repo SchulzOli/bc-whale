@@ -10,7 +10,8 @@ without tool-specific code. `npm run validate` enforces this contract;
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `id` | always | Stable kebab-case identity. Never reuse a removed id. |
-| `kind` | always | `internal-plugin` (our code) or `external-plugin`, `external-marketplace`, `external-mcp`. |
+| `kind` | always | `internal-plugin` (our code) or `external-plugin`, `external-marketplace`, `external-mcp`, `external-cli` (command-line tool without MCP server). |
+| `section` | optional | Grouping in the README; `oli-tech` = tools by the bc-whale author in their own repositories. |
 | `category` | always | `management`, `al-lifecycle`, `bc-data`, `quality`, `knowledge`, `devops`, `azure`, `testing`, `workflow`. |
 | `status` | always | `core`, `recommended`, `optional`, `experimental`, `planned`. Drives setup profiles. |
 | `owner` | always | Accountable publisher or maintainer, never a credential. |
