@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+- `status` no longer reports `?` for repository-specific MCP servers (AL MCP), command-line tools
+  (BC Lantern) and marketplaces (Awesome Copilot): new catalog field `detect` and marketplace detection.
+
 ## 0.2.2
 
 - `setup --launchers` (guided question, `launchers` in `whale_plan`) puts the `whale` and `bc-whale`

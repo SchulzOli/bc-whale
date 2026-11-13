@@ -64,7 +64,16 @@
         },
         "update": { "$ref": "#/$defs/step" },
         "verify": { "$ref": "#/$defs/step" },
-        "gaps": { "type": "string" }
+        "gaps": { "type": "string" },
+        "detect": {
+          "type": "object",
+          "description": "How whale status recognizes tools without an MCP definition or plugin",
+          "properties": {
+            "command": { "type": "string", "pattern": "^[a-zA-Z][\\w.-]* --version$" },
+            "mcpArgs": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     }

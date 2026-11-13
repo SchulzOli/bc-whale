@@ -1,6 +1,6 @@
 import type { Tool } from "./catalog.js";
 import { pluginName } from "./catalog.js";
-import { type Runner, run } from "./exec.js";
+import { type Runner, run, splitCommand } from "./exec.js";
 import { type HostId, type HostOptions, findEquivalent, hostFile, readEntries } from "./hosts.js";
 
 export interface Prerequisite {
@@ -53,7 +53,7 @@ export async function installedPlugins(runner: Runner = run): Promise<InstalledP
 
 export interface ToolStatus {
   id: string;
-  via: "mcp" | "plugin" | "unknown";
+  via: "mcp" | "plugin" | "marketplace" | "cli" | "unknown";
   installed: boolean;
   hosts: HostId[];
   /** Host entry names, when installed under a different name than the catalog id. */
@@ -65,23 +65,41 @@ export function availableHosts(options: HostOptions): HostId[] {
   return options.repo ? ["copilot", "vscode", "repo"] : ["copilot", "vscode"];
 }
 
+/** "https://github.com/owner/repo" -> "owner/repo" (marketplace lists show "(GitHub: owner/repo)"). */
+export function githubSlug(url: string | undefined): string | undefined {
+  return url ? /^https:\/\/github\.com\/([^/]+\/[^/#?]+)/.exec(url)?.[1].replace(/\.git$/, "") : undefined;
+}
+
 export async function status(tools: Tool[], options: HostOptions & { runner?: Runner; plugins?: InstalledPlugins } = {}): Promise<ToolStatus[]> {
+  const runner = options.runner ?? run;
   const hosts = availableHosts(options);
   const entries = Object.fromEntries(hosts.map((host) => [host, readEntries(hostFile(host, options), host)]));
-  const needsPlugins = tools.some((tool) => pluginName(tool));
-  const plugins = options.plugins ?? (needsPlugins ? await installedPlugins(options.runner) : undefined);
-  return tools.map((tool): ToolStatus => {
+  const needsPlugins = tools.some((tool) => pluginName(tool) || tool.kind === "external-marketplace");
+  const plugins = options.plugins ?? (needsPlugins ? await installedPlugins(runner) : undefined);
+  return Promise.all(tools.map(async (tool): Promise<ToolStatus> => {
     const plugin = pluginName(tool);
     if (plugin) {
       if (!plugins?.available) return { id: tool.id, via: "unknown", installed: false, hosts: [] };
       const version = plugins.plugins.get(plugin);
       return { id: tool.id, via: "plugin", installed: version !== undefined, hosts: version ? ["copilot"] : [], ...(version ? { version } : {}) };
     }
-    if (tool.mcp) {
+    if (tool.kind === "external-marketplace") {
+      const slug = githubSlug(tool.source);
+      if (!plugins?.available || !slug) return { id: tool.id, via: "unknown", installed: false, hosts: [] };
+      const installed = plugins.marketplaces.toLowerCase().includes(`github: ${slug.toLowerCase()})`);
+      return { id: tool.id, via: "marketplace", installed, hosts: installed ? ["copilot"] : [] };
+    }
+    if (tool.mcp || tool.detect?.mcpArgs) {
       const found: HostId[] = [];
       const names: Partial<Record<HostId, string>> = {};
+      const tokens = tool.detect?.mcpArgs ?? [];
       for (const host of hosts) {
-        const name = findEquivalent(entries[host], tool.mcp);
+        const name = tool.mcp
+          ? findEquivalent(entries[host], tool.mcp)
+          : Object.keys(entries[host]).find((key) => {
+            const args = entries[host][key].args;
+            return Array.isArray(args) && args.some((arg) => tokens.includes(String(arg)));
+          });
         if (name) {
           found.push(host);
           if (name !== tool.id) names[host] = name;
@@ -89,6 +107,13 @@ export async function status(tools: Tool[], options: HostOptions & { runner?: Ru
       }
       return { id: tool.id, via: "mcp", installed: found.length > 0, hosts: found, ...(Object.keys(names).length ? { names } : {}) };
     }
+    if (tool.detect?.command) {
+      const [executable, args] = splitCommand(tool.detect.command);
+      const result = await runner(executable, args, { timeoutMs: 30_000 });
+      const installed = result.started && result.code === 0;
+      const version = installed ? /\d+\.\d+[\w.+-]*/.exec(result.stdout)?.[0] : undefined;
+      return { id: tool.id, via: "cli", installed, hosts: [], ...(version ? { version } : {}) };
+    }
     return { id: tool.id, via: "unknown", installed: false, hosts: [] };
-  });
+  }));
 }

@@ -13,11 +13,12 @@ const catalog = loadCatalog();
 const tools = (...ids: string[]) => ids.map((id) => findTool(catalog, id));
 
 /** Fake copilot: optional plugin list, records invocations. */
-function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string } = {}) {
+function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string; bcl?: boolean } = {}) {
   const calls: string[] = [];
   const runner: Runner = async (command, args) => {
     const line = [command, ...args].join(" ");
     calls.push(line);
+    if (line === "bcl --version") return options.bcl ? { code: 0, stdout: "bcl 0.8.0\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
     if (line === "npm prefix -g" && options.npmPrefix) return { code: 0, stdout: `${options.npmPrefix}\n`, stderr: "", started: true };
     if (command !== "copilot" || options.copilot === false) return { code: null, stdout: "", stderr: "not found", started: false };
     if (line === "copilot plugin list") return { code: 0, stdout: options.plugins ?? "Installed plugins:\n", stderr: "", started: true };
@@ -161,4 +162,19 @@ test("launchers use npm's bin folder outside Windows and block without npm", () 
   const { runner: noNpm } = fakeRunner({ plugins: "  • whale@bc-whale (v0.2.1)\n" });
   const blocked = await plan({ tools: tools("whale"), hosts: ["copilot"], home, runner: noNpm, launchers: true });
   assert.equal(blocked.steps.find((s) => s.kind === "launcher")?.action, "blocked");
+}));
+test("status detects AL MCP entries by arguments, CLIs by version command and marketplaces by source", () => withHome(async (home) => {
+  mkdirSync(join(home, ".copilot"));
+  writeFileSync(hostFile("copilot", { home }), JSON.stringify({ mcpServers: { "almcp-MyApp": { type: "local", command: "node", args: ["cli.js", "almcp", "--repo", "C:\\r"] } } }));
+  const marketplaces = "Included with GitHub Copilot:\n  ◆ awesome-copilot (GitHub: github/awesome-copilot)\n";
+  const { runner } = fakeRunner({ marketplaces, bcl: true });
+  const result = await status(tools("al-mcp", "bc-lantern", "awesome-copilot"), { home, platform: "linux", runner });
+  assert.deepEqual(result, [
+    { id: "al-mcp", via: "mcp", installed: true, hosts: ["copilot"], names: { copilot: "almcp-MyApp" } },
+    { id: "bc-lantern", via: "cli", installed: true, hosts: [], version: "0.8.0" },
+    { id: "awesome-copilot", via: "marketplace", installed: true, hosts: ["copilot"] },
+  ]);
+  const { runner: bare } = fakeRunner();
+  const missing = await status(tools("bc-lantern", "awesome-copilot"), { home, platform: "linux", runner: bare });
+  assert.deepEqual(missing.map((s) => [s.via, s.installed]), [["cli", false], ["marketplace", false]]);
 }));

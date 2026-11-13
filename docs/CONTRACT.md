@@ -28,6 +28,7 @@ without tool-specific code. `npm run validate` enforces this contract;
 | `verify` | not planned | A read-only check that proves the tool works. |
 | `prerequisites` | optional | Runtimes or tools that must exist first. |
 | `gaps` | optional | What the tool does not cover and which tool fills it. |
+| `detect` | optional | How `whale status` recognizes a tool without `mcp` or a plugin: `command` (`"<tool> --version"`, exit 0 = installed) or `mcpArgs` (any host entry with one of these arguments). Marketplaces are detected from `source`. |
 
 Unknown fields are rejected. `planned` entries only need the always-required fields.
 

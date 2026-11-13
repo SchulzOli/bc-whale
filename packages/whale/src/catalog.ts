@@ -38,6 +38,8 @@ export interface Tool {
   update?: Step;
   verify?: Step;
   gaps?: string;
+  /** How status recognizes tools without an MCP definition or plugin. */
+  detect?: { command?: string; mcpArgs?: string[] };
 }
 
 export interface Catalog {

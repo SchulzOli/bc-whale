@@ -48,6 +48,7 @@
       "setup": { "method": "mcp-local", "note": "Repository-specific. Register per AL repository with `bc-whale mcp register --almcp --repo <path>`; bc-whale resolves the project folders and package caches." },
       "update": { "description": "Follows the installed AL Language extension / altool version." },
       "verify": { "description": "Tool discovery lists symbol search for the registered repository." },
+      "detect": { "mcpArgs": ["launchmcpserver", "almcp"] },
       "gaps": "No multi-app build order, container/cloud deployment, test runs or diagnostics evidence; bc-whale orchestrates those and launches this server per repository."
     },
     {
@@ -115,7 +116,8 @@
       "prerequisites": ["Python 3.10+", "pipx", "GitHub CLI signed in (gh auth login)"],
       "setup": { "method": "manual", "note": "pipx install bc-lantern" },
       "update": { "description": "pipx upgrade bc-lantern" },
-      "verify": { "description": "`bcl --version` exits 0." }
+      "verify": { "description": "`bcl --version` exits 0." },
+      "detect": { "command": "bcl --version" }
     },
     {
       "id": "al-design-patterns",

@@ -38,7 +38,7 @@ const enums = {
 };
 const sections = ["oli-tech"];
 const fields = new Set(["id", "kind", "section", "category", "status", "owner", "source", "path", "description", "documentation",
-  "access", "auth", "prerequisites", "inputs", "setup", "mcp", "update", "verify", "gaps"]);
+  "access", "auth", "prerequisites", "inputs", "setup", "mcp", "update", "verify", "gaps", "detect"]);
 const commandList = (value) => Array.isArray(value) && value.length > 0 && value.every(text);
 // whale executes setup/update commands, so only the Copilot plugin lifecycle is allowed.
 const executable = (value) => value === undefined || value.every((command) => /^copilot plugin [a-z][\w@./ -]*$/i.test(command));
@@ -72,6 +72,13 @@ function validateConnection(entry) {
     }
   }
   requireValue(entry.setup !== undefined || entry.mcp !== undefined, `${entry.id}: missing setup or mcp`);
+  if (entry.detect !== undefined) {
+    const { detect } = entry;
+    requireValue(Object.keys(detect).every((key) => ["command", "mcpArgs"].includes(key)), `${entry.id}: unknown detect field`);
+    // whale runs detect.command during status, so only a bare "<tool> --version" is allowed.
+    requireValue(detect.command === undefined || /^[a-z][\w.-]* --version$/i.test(detect.command), `${entry.id}: detect.command must be "<tool> --version"`);
+    requireValue(detect.mcpArgs === undefined || commandList(detect.mcpArgs), `${entry.id}: detect.mcpArgs must be a non-empty string list`);
+  }
   validateStep(entry, "update");
   validateStep(entry, "verify");
 }

