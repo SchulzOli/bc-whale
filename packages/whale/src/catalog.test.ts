@@ -30,5 +30,5 @@ test("plugin names come from the install command", () => {
 });
 
 test("oli-tech tools are grouped by section", () => {
-  assert.deepEqual(catalog.tools.filter((tool) => tool.section === "oli-tech").map((tool) => tool.id).sort(), ["al-design-patterns", "bc-atlas", "bc-lantern"]);
+  assert.deepEqual(catalog.tools.filter((tool) => tool.section === "oli-tech").map((tool) => tool.id).sort(), ["al-design-patterns", "bc-atlas", "bc-lantern", "bcquality"]);
 });

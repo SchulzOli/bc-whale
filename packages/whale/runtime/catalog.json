@@ -69,6 +69,7 @@
     {
       "id": "bcquality",
       "kind": "external-plugin",
+      "section": "oli-tech",
       "category": "quality",
       "status": "recommended",
       "owner": "Microsoft",
