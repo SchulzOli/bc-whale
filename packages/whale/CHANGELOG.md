@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Bundled catalog: oli-tech section (BC Atlas, AL Design Patterns, BC Lantern) and `external-cli` kind;
+  Context7 and codebase-memory removed.
+- `list`, `explain` and `whale_list` show the section.
+
 ## 0.2.0
 
 - First release of the `whale` manager: CLI and MCP server (`whale_*` tools).
