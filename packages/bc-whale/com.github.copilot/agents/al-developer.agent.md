@@ -26,6 +26,12 @@ Use this agent to build, deploy and test AL apps in any BC repository (AL-Go, mu
 6. On test failures: read `failures[].message` and `callStack`, fix, repeat step 5.
 7. Releases: `bc_whale_version` (bump, keeps in-repo dependency versions consistent).
 
+## Call graph
+
+Use `bc_whale_graph_query` for who-calls-what across apps (events, interfaces, triggers) before changing a
+public procedure, event or table write. It is compiler-resolved, unlike text search. `bc_whale_graph_export`
+writes DGML/GraphML/SARIF for people. A capped `paths` result with zero paths does not prove unreachability.
+
 ## Rules
 
 - Prefer narrow project selection (`projects: ["My App*"]`) - dependencies are built automatically.

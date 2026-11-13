@@ -31,7 +31,8 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 | Tool | Kind | Category | Status | What it is for |
 | --- | --- | --- | --- | --- |
 | [`whale`](packages/whale/README.md) | own | management | core | Guided setup, update and overview of everything below |
-| [`bc-whale`](packages/bc-whale/README.md) | own | AL lifecycle | core | Symbols, multi-app build, publish, test, containers, cloud sandboxes, diagnostics evidence, profiling |
+| [`bc-whale`](packages/bc-whale/README.md) | own | AL lifecycle | core | Symbols, multi-app build, publish, test, cross-app call graph, containers, cloud sandboxes, diagnostics evidence, profiling |
+| [ALTool](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-al-tool) | CLI | AL lifecycle | core | Compiler, workspace build, test runner, call graph; base of the AL MCP and bc-whale |
 | [AL MCP](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/al-agent-tools/al-mcp-server) | MCP | AL lifecycle | core | Official symbol search, relations, diagnostics, compile |
 | [Microsoft Learn](https://learn.microsoft.com/en-us/training/support/mcp) | MCP | knowledge | core | Official docs and code samples |
 | [BCQuality](https://github.com/microsoft/BCQuality) | plugin | quality | recommended | BC quality rules, AL code review, knowledge skills |

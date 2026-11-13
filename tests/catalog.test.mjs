@@ -111,7 +111,8 @@ test("the packaged bc-whale runs CLI, MCP discovery and profiling workers withou
       stderr: "pipe",
     }));
     const { tools } = await client.listTools();
-    assert.equal(tools.length, 42);
+    assert.equal(tools.length, 45);
+    assert.ok(tools.some((entry) => entry.name === "bc_whale_graph_query"));
     assert.ok(tools.some((entry) => entry.name === "bc_whale_cycle"));
     const profile = join(directory, "sample.alcpuprofile");
     writeFileSync(profile, JSON.stringify({

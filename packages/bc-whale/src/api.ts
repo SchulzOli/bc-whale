@@ -7,6 +7,7 @@ import { resolveAltool, runAltool, compareVersions } from "./altool.js";
 import { build, readDiagnostics, type Diagnostic, type BuildOptions, writeWorkspace } from "./build.js";
 import { captureInputs, check as checkInputs } from "./loop.js";
 import { verifyFixEvidence } from "./fix.js";
+import { EXPORT_FORMATS, ensureGraph, graphFailure, type GraphQueryOptions, type GraphSelection, parseQueryOutput, queryArgs, selectionArgs } from "./graph.js";
 import { proxyArguments, type ProxyKind } from "./troubleshoot.js";
 import { analyzeProfileFileAsync } from "./profile-analysis.js";
 import { collectProfile, createProfileBudget, readCapture, scheduleProfile } from "./profiling.js";
@@ -468,6 +469,46 @@ export async function map(ctx: Ctx) {
 export async function altoolRaw(ctx: Ctx & { args: string[] }) {
   const r = await runAltool(ctx.args, { log: ctx.log, cwd: ctx.repo });
   return { exitCode: r.exitCode, json: r.json, output: r.json ? undefined : r.output.slice(-20000) };
+}
+
+// ---------------- call graph (altool graph) ----------------
+
+type GraphCtx = Ctx & { projects?: string[]; force?: boolean; timeoutMs?: number; signal?: AbortSignal };
+
+/** Selected projects plus their in-repo dependencies, so cross-app calls resolve. */
+function graphProjects(ctx: GraphCtx) {
+  const { repo, log } = open(ctx);
+  return { repo, log, projects: selectProjects(repo, ctx.projects, { includeDependencies: true }) };
+}
+
+export async function graphBuild(ctx: GraphCtx) {
+  const { repo, log, projects } = graphProjects(ctx);
+  return ensureGraph(repo, projects, { force: ctx.force, log, timeoutMs: ctx.timeoutMs, signal: ctx.signal });
+}
+
+export async function graphQuery(ctx: GraphCtx & GraphQueryOptions) {
+  const { repo, log, projects } = graphProjects(ctx);
+  const graph = await ensureGraph(repo, projects, { force: ctx.force, log, timeoutMs: ctx.timeoutMs, signal: ctx.signal });
+  const args = queryArgs(graph.file, ctx);
+  const r = await runAltool(args, { log, timeoutMs: ctx.timeoutMs ?? 600_000, signal: ctx.signal });
+  const failure = graphFailure(r.output, r.exitCode);
+  if (failure) throw new Error(`Graph query failed: ${failure}`);
+  const result = parseQueryOutput(r.stdout || r.output);
+  const note = ctx.paths && result.count === 0
+    ? "--paths is a capped sample; rerun without paths to confirm that the target is unreachable."
+    : undefined;
+  return { graph, ...result, ...(note ? { note } : {}) };
+}
+
+export async function graphExport(ctx: GraphCtx & GraphSelection & { format?: (typeof EXPORT_FORMATS)[number]; out?: string }) {
+  const { repo, log, projects } = graphProjects(ctx);
+  const graph = await ensureGraph(repo, projects, { force: ctx.force, log, timeoutMs: ctx.timeoutMs, signal: ctx.signal });
+  const format = ctx.format ?? "dgml";
+  const out = resolve(ctx.out ?? join(workDir(repo, "graph"), `export.${format}`));
+  const r = await runAltool(["graph", "export", "--graph", graph.file, "--format", format, ...selectionArgs(ctx), "--out", out], { log, timeoutMs: ctx.timeoutMs ?? 600_000, signal: ctx.signal });
+  const failure = graphFailure(r.output, r.exitCode) ?? (existsSync(out) ? undefined : "altool did not write the export");
+  if (failure) throw new Error(`Graph export failed: ${failure}`);
+  return { graph, format, file: out };
 }
 
 // ---------------- targets ----------------

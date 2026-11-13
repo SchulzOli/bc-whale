@@ -73,6 +73,32 @@ program.command("validate").description("validate baseline -> persistent seed ->
     verifyMethods: o.verifyMethods, authorizedDisposableTarget: o.authorizedDisposableTarget === true, timeoutMs: o.timeoutMs,
   }))));
 program.command("map").description("mermaid dependency map of the repo (altool workspace map)").action(() => run(() => api.map(ctx())));
+const graphOptions = (command: Command) => command
+  .addOption(projectsOpt())
+  .option("--from <selector>", "source selector, e.g. obj:Codeunit/Sales-Post or ns:MyCompany.Sales*")
+  .option("--to <selector>", "target selector")
+  .addOption(new Option("--direction <direction>").choices(["callees", "callers", "both"]))
+  .option("--edge-kinds <kinds>", "Direct,Event,Interface,Run,Trigger", list)
+  .addOption(new Option("--depth <n>", "max traversal depth (0 = unbounded)").argParser((v) => (v === "0" ? 0 : positive(v))))
+  .option("--resolved-only", "only statically resolved edges")
+  .option("--frontier <selector>", "nearest nodes matching this selector")
+  .option("--exclude <selector>", "prune nodes matching this selector")
+  .option("--force", "rebuild the graph")
+  .addOption(timeoutOpt());
+const graphSel = (o: any) => ({ projects: o.projects, from: o.from, to: o.to, direction: o.direction, edgeKinds: o.edgeKinds, depth: o.depth,
+  resolvedOnly: o.resolvedOnly, frontier: o.frontier, exclude: o.exclude, force: o.force, timeoutMs: o.timeoutMs });
+const graph = program.command("graph").description("compiler-resolved AL call graph across apps (altool graph)");
+graph.command("build").description("build or refresh the graph").addOption(projectsOpt()).option("--force", "rebuild").addOption(timeoutOpt())
+  .action((o) => run(() => api.graphBuild(ctx({ projects: o.projects, force: o.force, timeoutMs: o.timeoutMs }))));
+graphOptions(graph.command("query").description("reachable nodes or paths"))
+  .addOption(new Option("--scope <scope>").choices(["cloud", "onprem"]))
+  .option("--paths", "enumerate concrete paths (capped sample)")
+  .addOption(new Option("--max-paths <n>").argParser(positive))
+  .action((o) => run(() => api.graphQuery(ctx({ ...graphSel(o), scope: o.scope, paths: o.paths, maxPaths: o.maxPaths }))));
+graphOptions(graph.command("export").description("export the graph or a subgraph as dgml, graphml or sarif"))
+  .addOption(new Option("--format <format>").choices(["dgml", "graphml", "sarif"]))
+  .option("-o, --out <file>", "output file")
+  .action((o) => run(() => api.graphExport(ctx({ ...graphSel(o), format: o.format, out: o.out }))));
 const analyzers = program.command("analyzers").description("resolve and provision all configured custom analyzers");
 analyzers.command("status").action(() => run(() => api.analyzers(ctx())));
 analyzers.command("prepare").requiredOption("--source <folder>", "trusted local ALCops suite folder, including companion DLLs")

@@ -6,7 +6,7 @@ const catalog = loadCatalog();
 const ids = (tools: { id: string }[]) => tools.map((tool) => tool.id);
 
 test("profiles select by status and include lower tiers", () => {
-  assert.deepEqual(ids(selectTools(catalog, { profile: "core" })), ["whale", "bc-whale", "al-mcp", "microsoft-learn"]);
+  assert.deepEqual(ids(selectTools(catalog, { profile: "core" })), ["whale", "bc-whale", "altool", "al-mcp", "microsoft-learn"]);
   const recommended = ids(selectTools(catalog, { profile: "recommended" }));
   for (const id of ["whale", "bc-whale", "bcquality", "al-design-patterns", "bc-atlas", "github"]) assert.ok(recommended.includes(id), id);
   assert.ok(!recommended.includes("markitdown"));

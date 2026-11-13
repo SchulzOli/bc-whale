@@ -161,6 +161,9 @@ bc-whale debug proxy --kind profile|snapshot --target <name> [--api-port 7047]
 bc-whale profile schedule --target <name> --session-id <NST-id> --authorized-session [--api-port 7048]
 bc-whale profile collect <capture-id> [--timeout-ms 180000]
 bc-whale profile analyze <local.zip|local.alcpuprofile> [--top 10] [--report-file <path>]
+bc-whale graph build [-p ...] [--force]
+bc-whale graph query --from|--to <selector> [--direction callers] [--paths] [--edge-kinds Direct,Event] [--exclude "ns:*Test*"]
+bc-whale graph export [--from|--to <selector>] [--format dgml|graphml|sarif] [-o file]
 bc-whale altool -- <raw altool args>                   # escape hatch
 ```
 
@@ -174,6 +177,24 @@ and [Microsoft Graph MCP for Enterprise](https://learn.microsoft.com/en-us/graph
 
 Global options: `-r, --repo <path>` (default: current directory), `-q, --quiet`.
 
+### Call graph across apps
+
+`bc-whale graph` wraps `altool graph` (AL extension 30+): it compiles the selected projects and
+their in-repo dependencies together (`extract-whole`), so direct, event, interface, run and trigger
+calls resolve across apps. The graph lives in `<repo>/.bc-whale/graph/` and is rebuilt only when
+AL sources or `app.json` change. `query` and `export` build it on demand.
+
+```powershell
+bc-whale graph query --to "obj:Codeunit/Sales-Post#Run" --direction callers
+bc-whale graph query --from "access:public+app:<guid>" --to "access:internal+app:<guid>" --paths
+bc-whale graph export --from "obj:Codeunit/My Impl." --direction both --depth 3 --format dgml
+```
+
+Selectors and their semantics are Microsoft's: see
+[ALTool graph commands](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-al-tool#graph-commands).
+`--paths` is a capped sample; an empty path list does not prove unreachability. Invalid selectors
+fail with the altool message (altool itself exits 0 on them). Microsoft base app calls appear as
+leaf nodes, because only your source is compiled.
 ### Source-backed bugfix loop
 
 1. Use `bc-whale check` / `bc_whale_check` after each edit. Content hashes identify changed apps and their

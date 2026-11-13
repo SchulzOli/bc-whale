@@ -8,13 +8,13 @@
     {
       "name": "whale",
       "description": "Set up, update, check and explain the Business Central agent toolset.",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "source": "./packages/whale"
     },
     {
       "name": "bc-whale",
       "description": "Business Central AL workflows, diagnostics, container management and profiling.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./packages/bc-whale"
     }
   ]

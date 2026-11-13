@@ -25,7 +25,7 @@
       "status": "core",
       "owner": "bc-whale maintainers",
       "path": "packages/bc-whale",
-      "description": "AL lifecycle orchestration on top of altool: symbols, multi-app build, publish, test, containers, cloud sandboxes, diagnostics evidence and profiling.",
+      "description": "AL lifecycle orchestration on top of altool: symbols, multi-app build, publish, test, cross-app call graph, containers, cloud sandboxes, diagnostics evidence and profiling.",
       "documentation": "packages/bc-whale/README.md",
       "access": "destructive",
       "auth": "host-credentials",
@@ -34,6 +34,23 @@
       "verify": { "description": "MCP server bc_whale lists its bc_whale_* tools; bc_whale_doctor reports the toolchain." }
     },
     {
+      "id": "altool",
+      "kind": "external-cli",
+      "category": "al-lifecycle",
+      "status": "core",
+      "owner": "Microsoft",
+      "source": "https://www.nuget.org/packages/Microsoft.Dynamics.BusinessCentral.Development.Tools",
+      "description": "ALTool (`al`): AL compiler, multi-project workspace build, test runner, call graph, and the launcher of the AL MCP, LSP, profiling and snapshot servers.",
+      "documentation": "https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-al-tool",
+      "access": "read-write",
+      "auth": "host-credentials",
+      "prerequisites": [".NET SDK for the global tool, or the AL Language VS Code extension (bundles altool)"],
+      "setup": { "method": "manual", "note": "dotnet tool install --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease (or install the AL Language extension)" },
+      "update": { "description": "dotnet tool update --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease; the AL Language extension updates through VS Code. bc-whale always uses the newest altool it finds." },
+      "verify": { "description": "`al --version` exits 0; `bc-whale doctor` shows which altool bc-whale uses." },
+      "detect": { "command": "al --version" },
+      "gaps": "bc-whale wraps workspace compile/map, runtests, publishapp, downloadsymbols, graph and the profiling/snapshot proxies; the AL MCP covers launchmcpserver. launchlspserver (LSP for agents) is not wired up yet."
+    },    {
       "id": "al-mcp",
       "kind": "external-mcp",
       "category": "al-lifecycle",
@@ -99,7 +116,7 @@
       "mcp": { "type": "stdio", "command": "npx", "args": ["--yes", "--package=bc-atlas", "bca-mcp"] },
       "update": { "description": "npx resolves the latest published version; a global install updates with `bca update`. The VS Code extension updates through the Marketplace." },
       "verify": { "description": "Tool discovery lists bc_atlas_layers and bc_atlas_view." },
-      "gaps": "Static analysis from source; bc-whale supplies compiler, deployment and test execution."
+      "gaps": "Static analysis from source with its own parser; bc-whale supplies compiler, deployment and test execution, and its graph tools give the compiler-resolved altool call graph."
     },
     {
       "id": "bc-lantern",

@@ -10,7 +10,7 @@ import type { Logger } from "./exec.js";
 const MAX_TEXT = 60_000;
 
 const server = new McpServer(
-  { name: "bc_whale", version: "0.1.0" },
+  { name: "bc_whale", version: "0.2.0" },
   {
     instructions: [
       "bc-whale covers the Business Central AL dev life cycle (multi-app repos) with altool only - never use BcContainerHelper.",
@@ -216,6 +216,37 @@ tool(
 tool("bc_whale_launch", "Write a 'bc-whale: <target>' configuration into each project's .vscode/launch.json (for F5 debugging in VS Code).", { repo, projects, target }, (a, log) => api.launch({ ...a, log }));
 
 tool("bc_whale_map", "Mermaid dependency map of the repo's AL projects.", { repo }, (a, log) => api.map({ ...a, log }));
+
+const selector = (what: string) => z.string().optional().describe(`${what} node selector: ns:<glob>, obj:<Type>/<Name>[#member], app:<guid>, id:, kind:, scope:, access:, or debuggable/elevation/onprem-surface; '!' negates, '+' AND, ',' OR`);
+const graphSelection = {
+  repo, projects,
+  from: selector("Source"), to: selector("Target"),
+  direction: z.enum(["callees", "callers", "both"]).optional().describe("Default: callees for from, callers for to"),
+  edgeKinds: z.array(z.enum(["Direct", "Event", "Interface", "Run", "Trigger"])).optional(),
+  depth: z.number().int().min(0).optional().describe("Max traversal depth, 0 = unbounded"),
+  resolvedOnly: z.boolean().optional().describe("Only statically resolved edges"),
+  frontier: selector("Return the nearest nodes matching this"),
+  exclude: selector("Prune nodes matching this (e.g. ns:*Test*)"),
+  force: z.boolean().optional().describe("Rebuild the graph even if sources are unchanged"),
+  timeoutMs,
+};
+
+tool("bc_whale_graph_build", "Build the compiler-resolved AL call graph (altool graph extract-whole) of the selected projects and their in-repo dependencies. Reused until AL sources or app.json change. Query and export build it on demand.", {
+  repo, projects, force: graphSelection.force, timeoutMs,
+}, (a, log, signal) => api.graphBuild({ ...a, log, signal }));
+
+tool("bc_whale_graph_query", "Who calls what across apps: reachability or concrete paths over the compiler-resolved AL call graph (events, interfaces, triggers). Examples: to='obj:Codeunit/Sales-Post#Run' direction=callers; from='access:public+app:<guid>' to='access:internal+app:<guid>' paths=true.", {
+  ...graphSelection,
+  scope: z.enum(["cloud", "onprem"]).optional(),
+  paths: z.boolean().optional().describe("Enumerate concrete paths (capped sample) instead of reachable nodes"),
+  maxPaths: z.number().int().positive().optional(),
+}, (a, log, signal) => api.graphQuery({ ...a, log, signal }));
+
+tool("bc_whale_graph_export", "Export the call graph or a selected subgraph as DGML (Visual Studio), GraphML (yEd, Gephi) or SARIF (code scanning), with source locations.", {
+  ...graphSelection,
+  format: z.enum(["dgml", "graphml", "sarif"]).optional(),
+  out: z.string().optional().describe("Output file; default <repo>/.bc-whale/graph/export.<format>"),
+}, (a, log, signal) => api.graphExport({ ...a, log, signal }));
 
 tool(
   "bc_whale_altool",

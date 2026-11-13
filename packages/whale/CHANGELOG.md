@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+- Catalog: ALTool as a core command-line tool (`al --version`); update tracking for NuGet packages.
+
 ## 0.2.3
 
 - `status` no longer reports `?` for repository-specific MCP servers (AL MCP), command-line tools

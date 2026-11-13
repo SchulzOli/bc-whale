@@ -6,7 +6,7 @@ development dependency sets (see the repository README).
 | Scenario | Required evidence |
 | --- | --- |
 | Existing AL behavior | Original compiler, diagnostics, targets, lifecycle, cancellation and profile tests pass. |
-| Installation without a source checkout | Copy only `runtime/` and module metadata to a fresh folder, with no `node_modules`; CLI starts and real stdio MCP lists all 42 tools. |
+| Installation without a source checkout | Copy only `runtime/` and module metadata to a fresh folder, with no `node_modules`; CLI starts and real stdio MCP lists all 45 tools. |
 | Worker distribution | Real MCP `bc_whale_profile_analyze` analyzes local samples and persists a successful report from the isolated plugin. |
 | AL bugfix skill | Given a diagnostic-only baseline, the agent must not claim runtime verification or suppress analyzer rules. Check baseline id, report files and source hashes. |
 | Runtime bugfix | The agent obtains an authorized target and explicit regression selectors before publishing/testing. |

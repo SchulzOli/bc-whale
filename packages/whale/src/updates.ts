@@ -3,7 +3,7 @@ import { readState, stateFile, writeState } from "./state.js";
 
 export interface UpdateInfo {
   id: string;
-  source: "github" | "npm" | "pypi" | "none";
+  source: "github" | "npm" | "pypi" | "nuget" | "none";
   package?: string;
   latest?: string;
   publishedAt?: string;
@@ -29,6 +29,8 @@ export function upstreamOf(tool: Tool): Pick<UpdateInfo, "source" | "package"> {
     const spec = flag ?? args.find((arg) => !arg.startsWith("-"));
     if (spec) return { source: mcp.command === "npx" ? "npm" : "pypi", package: stripVersion(spec) };
   }
+  const nuget = tool.source && /^https:\/\/www\.nuget\.org\/packages\/([^/#?]+)/i.exec(tool.source);
+  if (nuget) return { source: "nuget", package: nuget[1] };
   const repository = tool.source && /^https:\/\/github\.com\/([^/]+\/[^/#?]+)/.exec(tool.source);
   if (repository) return { source: "github", package: repository[1].replace(/\.git$/, "") };
   return { source: "none" };
@@ -48,6 +50,12 @@ async function lookup(id: string, upstream: Pick<UpdateInfo, "source" | "package
       if (!response.ok) return { ...base, error: `pypi ${response.status}` };
       const data = (await response.json()) as { info?: { version?: string }; urls?: { upload_time_iso_8601?: string }[] };
       return { ...base, latest: data.info?.version, publishedAt: data.urls?.[0]?.upload_time_iso_8601, url: `https://pypi.org/project/${upstream.package}/` };
+    }
+    if (upstream.source === "nuget") {
+      const response = await fetcher(`https://api.nuget.org/v3-flatcontainer/${upstream.package!.toLowerCase()}/index.json`);
+      if (!response.ok) return { ...base, error: `nuget ${response.status}` };
+      const data = (await response.json()) as { versions?: string[] };
+      return { ...base, latest: data.versions?.at(-1), url: `https://www.nuget.org/packages/${upstream.package}` };
     }
     if (upstream.source === "github") {
       const headers: Record<string, string> = { accept: "application/vnd.github+json", "user-agent": "bc-whale" };

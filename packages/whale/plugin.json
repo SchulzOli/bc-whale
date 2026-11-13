@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "whale",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Set up, update, check and explain the Business Central agent toolset from the bc-whale catalog.",
   "author": { "name": "SchulzOli" },
   "repository": "https://github.com/SchulzOli/bc-whale",

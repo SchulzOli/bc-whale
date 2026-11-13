@@ -16,6 +16,7 @@ test("derives the upstream package from npx/uvx arguments or the GitHub source",
   assert.deepEqual(upstreamOf(tool("bc-lantern")), { source: "github", package: "SchulzOli/bc-lantern" });
   assert.deepEqual(upstreamOf(tool("markitdown")), { source: "pypi", package: "markitdown-mcp" });
   assert.deepEqual(upstreamOf(tool("bcquality")), { source: "github", package: "microsoft/BCQuality" });
+  assert.deepEqual(upstreamOf(tool("altool")), { source: "nuget", package: "Microsoft.Dynamics.BusinessCentral.Development.Tools" });
   assert.deepEqual(upstreamOf(tool("microsoft-learn")), { source: "none" });
   assert.equal(stripVersion("pkg==1.2"), "pkg");
 });
@@ -51,6 +52,22 @@ test("network errors are reported per tool and not cached", async () => {
     const fake = (async () => { throw new Error("offline"); }) as typeof fetch;
     const [result] = await checkUpdates([tool("playwright")], { fetch: fake, stateFile: join(directory, "s.json") });
     assert.equal(result.error, "offline");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("NuGet packages report the newest listed version", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "whale-updates-"));
+  const requests: string[] = [];
+  const fake = (async (url: string) => {
+    requests.push(url);
+    return Response.json({ versions: ["17.0.34.45391", "30.0.43.45776-beta"] });
+  }) as typeof fetch;
+  try {
+    const [info] = await checkUpdates([tool("altool")], { fetch: fake, stateFile: join(directory, "s.json") });
+    assert.equal(info.latest, "30.0.43.45776-beta");
+    assert.equal(requests[0], "https://api.nuget.org/v3-flatcontainer/microsoft.dynamics.businesscentral.development.tools/index.json");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
