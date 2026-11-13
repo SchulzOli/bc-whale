@@ -9,8 +9,9 @@ copilot plugin marketplace add SchulzOli/bc-whale
 copilot plugin install whale@bc-whale
 ```
 
-The plugin contributes the `whale` MCP server. The same runtime is a CLI:
-`node <plugin>/runtime/cli.js` (or `whale` after `npm link` in a checkout).
+The plugin contributes the `whale` MCP server. The same runtime is a CLI:`node <plugin>/runtime/cli.js`.
+Plugins do not add commands to PATH; see the [root README](../../README.md#quick-start) for a
+one-time launcher, or run `npm link` in a checkout.
 
 ## CLI
 
