@@ -10,7 +10,7 @@ without tool-specific code. `npm run validate` enforces this contract;
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `id` | always | Stable kebab-case identity. Never reuse a removed id. |
-| `kind` | always | `internal-plugin` (our code) or `external-plugin`, `external-marketplace`, `external-mcp`, `external-cli` (command-line tool without MCP server). |
+| `kind` | always | `internal-plugin` (our code) or `external-plugin`, `external-marketplace`, `external-mcp`, `external-cli` (command-line tool without MCP server), `external-extension` (VS Code extension). |
 | `section` | optional | Grouping in the README; `oli-tech` = tools by the bc-whale author in their own repositories. |
 | `category` | always | `management`, `al-lifecycle`, `bc-data`, `quality`, `knowledge`, `devops`, `azure`, `testing`, `workflow`. |
 | `status` | always | `core`, `recommended`, `optional`, `experimental`, `planned`. Drives setup profiles. |
@@ -21,14 +21,14 @@ without tool-specific code. `npm run validate` enforces this contract;
 | `auth` | always | `none`, `host-oauth`, `host-credentials`, `api-key-env`, `azure-cli`. |
 | `source` | external | HTTPS upstream (repository or product page). |
 | `path` | own, not planned | Repository-relative package folder. |
-| `setup` | unless `mcp` | `method` (`copilot-plugin`, `command`, `mcp-local`, `manual`) plus `commands` or `note`. `whale` runs the commands, so only these forms are allowed: `copilot plugin ...`, `pipx install\|upgrade <pkg>`, `dotnet tool install\|update --global <pkg> [--prerelease]`, `npm install --global <pkg>`. `command` setups also need `detect.command`, so installed tools are skipped. |
+| `setup` | unless `mcp` | `method` (`copilot-plugin`, `command`, `mcp-local`, `manual`) plus `commands` or `note`. `whale` runs the commands, so only these forms are allowed: `copilot plugin ...`, `pipx install\|upgrade <pkg>`, `dotnet tool install\|update --global <pkg> [--prerelease]`, `npm install --global <pkg>`, `code --install-extension <publisher.name> [--force]`. `command` setups also need `detect.command` or `detect.vscodeExtension`, so installed tools are skipped. |
 | `mcp` | unless `setup` | Host-neutral MCP definition: `stdio` (`command`, `args`) or `http` (`url`, HTTPS). |
 | `inputs` | when used | `UPPER_CASE` placeholders referenced as `{{NAME}}` in `mcp`. |
 | `update` | not planned | `commands` or `description` of how the tool is updated. |
 | `verify` | not planned | A read-only check that proves the tool works. |
 | `prerequisites` | optional | Runtimes or tools that must exist first. |
 | `gaps` | optional | What the tool does not cover and which tool fills it. |
-| `detect` | optional | How `whale status` recognizes a tool without `mcp` or a plugin: `command` (`"<tool> --version"`, exit 0 = installed) or `mcpArgs` (any host entry with one of these arguments). Marketplaces are detected from `source`. |
+| `detect` | optional | How `whale status` recognizes a tool without `mcp` or a plugin: `command` (`"<tool> --version"`, exit 0 = installed) or `mcpArgs` (any host entry with one of these arguments) or `vscodeExtension` (`<publisher>.<name>`, also used for update tracking). Marketplaces are detected from `source`. |
 
 Unknown fields are rejected. `planned` entries only need the always-required fields.
 

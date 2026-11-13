@@ -30,7 +30,7 @@ function localPath(root, path) {
 }
 
 const enums = {
-  kind: ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp", "external-cli"],
+  kind: ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp", "external-cli", "external-extension"],
   category: ["management", "al-lifecycle", "bc-data", "quality", "knowledge", "devops", "azure", "testing", "workflow"],
   status: ["core", "recommended", "optional", "experimental", "planned"],
   access: ["read-only", "read-write", "destructive"],
@@ -48,6 +48,7 @@ const allowedCommands = [
   new RegExp(`^pipx (install|upgrade) ${PACKAGE}$`, "i"),
   new RegExp(`^dotnet tool (install|update) --global ${PACKAGE}( --prerelease)?$`, "i"),
   new RegExp(`^npm install --global ${PACKAGE}$`, "i"),
+  /^code --install-extension [a-z0-9][\w-]*\.[a-z0-9][\w-]*( --force)?$/i,
 ];
 const executable = (value) => value === undefined || value.every((command) => allowedCommands.some((pattern) => pattern.test(command)));
 
@@ -62,7 +63,7 @@ function validateStep(entry, name) {
 function validateConnection(entry) {
   if (entry.setup !== undefined) {
     requireValue(["copilot-plugin", "command", "mcp-local", "manual"].includes(entry.setup.method), `${entry.id}: invalid setup method`);
-    if (entry.setup.method === "command") requireValue(commandList(entry.setup.commands) && entry.detect?.command, `${entry.id}: command setup needs commands and detect.command`);
+    if (entry.setup.method === "command") requireValue(commandList(entry.setup.commands) && (entry.detect?.command || entry.detect?.vscodeExtension), `${entry.id}: command setup needs commands and detect.command or detect.vscodeExtension`);
     requireValue(commandList(entry.setup.commands) || text(entry.setup.note), `${entry.id}: setup needs commands or note`);
     requireValue(executable(entry.setup.commands), `${entry.id}: setup commands must be allowed package-manager installs`);
   }
@@ -83,7 +84,8 @@ function validateConnection(entry) {
   requireValue(entry.setup !== undefined || entry.mcp !== undefined, `${entry.id}: missing setup or mcp`);
   if (entry.detect !== undefined) {
     const { detect } = entry;
-    requireValue(Object.keys(detect).every((key) => ["command", "mcpArgs"].includes(key)), `${entry.id}: unknown detect field`);
+    requireValue(Object.keys(detect).every((key) => ["command", "mcpArgs", "vscodeExtension"].includes(key)), `${entry.id}: unknown detect field`);
+    requireValue(detect.vscodeExtension === undefined || /^[a-z0-9][\w-]*\.[a-z0-9][\w-]*$/i.test(detect.vscodeExtension), `${entry.id}: detect.vscodeExtension must be <publisher>.<name>`);
     // whale runs detect.command during status, so only a bare "<tool> --version" is allowed.
     requireValue(detect.command === undefined || /^[a-z][\w.-]* --version$/i.test(detect.command), `${entry.id}: detect.command must be "<tool> --version"`);
     requireValue(detect.mcpArgs === undefined || commandList(detect.mcpArgs), `${entry.id}: detect.mcpArgs must be a non-empty string list`);

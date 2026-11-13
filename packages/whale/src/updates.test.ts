@@ -17,6 +17,8 @@ test("derives the upstream package from npx/uvx arguments or the GitHub source",
   assert.deepEqual(upstreamOf(tool("markitdown")), { source: "pypi", package: "markitdown-mcp" });
   assert.deepEqual(upstreamOf(tool("bcquality")), { source: "github", package: "microsoft/BCQuality" });
   assert.deepEqual(upstreamOf(tool("altool")), { source: "nuget", package: "Microsoft.Dynamics.BusinessCentral.Development.Tools" });
+  assert.deepEqual(upstreamOf(tool("al-objid")), { source: "vscode", package: "vjeko.vjeko-al-objid" });
+  assert.deepEqual(upstreamOf(tool("al-objid-mcp")), { source: "npm", package: "@sshadows/objid-mcp" });
   assert.deepEqual(upstreamOf(tool("microsoft-learn")), { source: "none" });
   assert.equal(stripVersion("pkg==1.2"), "pkg");
 });

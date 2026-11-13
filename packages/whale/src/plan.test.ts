@@ -13,12 +13,15 @@ const catalog = loadCatalog();
 const tools = (...ids: string[]) => ids.map((id) => findTool(catalog, id));
 
 /** Fake copilot: optional plugin list, records invocations. */
-function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string; bcl?: boolean; pipx?: boolean } = {}) {
+function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string; bcl?: boolean; pipx?: boolean; code?: boolean; extensions?: string } = {}) {
   const calls: string[] = [];
   const runner: Runner = async (command, args) => {
     const line = [command, ...args].join(" ");
     calls.push(line);
     if (line === "al --version") return { code: null, stdout: "", stderr: "", started: false };
+    if (line === "code --version") return options.code ? { code: 0, stdout: "1.146.0\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
+    if (line === "code --list-extensions --show-versions") return options.code ? { code: 0, stdout: options.extensions ?? "", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
+    if (line.startsWith("code --install-extension")) return { code: 0, stdout: "installed", stderr: "", started: true };
     if (line === "pipx --version") return options.pipx ? { code: 0, stdout: "1.7.1\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
     if (line.startsWith("pipx ")) return { code: 0, stdout: "installed", stderr: "", started: true };
     if (line === "bcl --version") return options.bcl ? { code: 0, stdout: "bcl 0.8.0+abc123\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
@@ -195,4 +198,18 @@ test("status detects AL MCP entries by arguments, CLIs by version command and ma
   const { runner: bare } = fakeRunner();
   const missing = await status(tools("bc-lantern", "awesome-copilot"), { home, platform: "linux", runner: bare });
   assert.deepEqual(missing.map((s) => [s.via, s.installed]), [["cli", false], ["marketplace", false]]);
+}));
+test("VS Code extensions install with code, are detected with their version and block without code", () => withHome(async (home) => {
+  const blocked = await plan({ tools: tools("al-objid"), hosts: ["copilot"], home, runner: fakeRunner().runner });
+  assert.equal(blocked.steps[0].action, "blocked");
+  assert.match(blocked.steps[0].detail, /code not found on PATH/);
+  const { runner, calls } = fakeRunner({ code: true, extensions: "ms-dynamics-smb.al@30.0.2863738\n" });
+  const options = { tools: tools("al-objid"), hosts: ["copilot" as const], home, runner };
+  const ready = await plan(options);
+  assert.deepEqual(ready.steps.map((s) => [s.action, s.command]), [["run", "code --install-extension vjeko.vjeko-al-objid"]]);
+  await apply(options, ready.planHash, { confirmCommands: true });
+  assert.ok(calls.includes("code --install-extension vjeko.vjeko-al-objid"));
+  const installed = fakeRunner({ code: true, extensions: "VJEKO.vjeko-al-objid@3.4.6\n" }).runner;
+  assert.equal((await plan({ ...options, runner: installed })).steps[0].detail, "Installed (3.4.6)");
+  assert.deepEqual(await status(tools("al-objid"), { home, platform: "linux", runner: installed }), [{ id: "al-objid", via: "extension", installed: true, hosts: [], version: "3.4.6" }]);
 }));

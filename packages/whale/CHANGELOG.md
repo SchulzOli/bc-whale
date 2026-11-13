@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7
+
+- Catalog: AL Object ID Ninja (VS Code extension) and AL Object ID Ninja MCP.
+- VS Code extensions: kind `external-extension`, install with `code --install-extension`, detection and version
+  from `code --list-extensions`, update tracking from the VS Code Marketplace.
+
 ## 0.2.6
 
 - `setup`, `update`, `doctor` and `status` take tool ids: `whale setup bc-lantern` sets up only that tool.

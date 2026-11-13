@@ -73,7 +73,7 @@ export async function installedPlugins(runner: Runner = run): Promise<InstalledP
 
 export interface ToolStatus {
   id: string;
-  via: "mcp" | "plugin" | "marketplace" | "cli" | "unknown";
+  via: "mcp" | "plugin" | "marketplace" | "cli" | "extension" | "unknown";
   installed: boolean;
   hosts: HostId[];
   /** Host entry names, when installed under a different name than the catalog id. */
@@ -128,7 +128,7 @@ export async function status(tools: Tool[], options: HostOptions & { runner?: Ru
       return { id: tool.id, via: "mcp", installed: found.length > 0, hosts: found, ...(Object.keys(names).length ? { names } : {}) };
     }
     const detected = await detectInstalled(tool, runner);
-    if (detected) return { id: tool.id, via: "cli", installed: detected.installed, hosts: [], ...(detected.version ? { version: detected.version } : {}) };
+    if (detected) return { id: tool.id, via: tool.detect?.vscodeExtension ? "extension" : "cli", installed: detected.installed, hosts: [], ...(detected.version ? { version: detected.version } : {}) };
     return { id: tool.id, via: "unknown", installed: false, hosts: [] };
   }));
 }

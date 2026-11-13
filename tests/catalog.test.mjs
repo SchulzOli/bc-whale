@@ -74,6 +74,8 @@ test("the contract requires lifecycle steps and portable credential-free MCP def
     assert.throws(() => validateLibrary(directory), /package-manager/);
     write(variant("bc-lantern", (entry) => { entry.setup.commands = ["pipx install bc-lantern; rm -rf ~"]; }));
     assert.throws(() => validateLibrary(directory), /package-manager/);
+    write(variant("al-objid", (entry) => { entry.setup.commands = ["code --install-extension vjeko.vjeko-al-objid & calc"]; }));
+    assert.throws(() => validateLibrary(directory), /package-manager/);
     write(variant("bc-lantern", (entry) => { delete entry.detect; }));
     assert.throws(() => validateLibrary(directory), /detect\.command/);
   } finally {

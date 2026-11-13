@@ -34,6 +34,8 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 | [`bc-whale`](packages/bc-whale/README.md) | own | AL lifecycle | core | Symbols, multi-app build, publish, test, cross-app call graph, containers, cloud sandboxes, diagnostics evidence, profiling |
 | [ALTool](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/devenv-al-tool) | CLI | AL lifecycle | core | Compiler, workspace build, test runner, call graph; base of the AL MCP and bc-whale |
 | [AL MCP](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/al-agent-tools/al-mcp-server) | MCP | AL lifecycle | core | Official symbol search, relations, diagnostics, compile |
+| [AL Object ID Ninja](https://alid.ninja/) | VS Code extension | AL lifecycle | recommended | Collision-free object IDs for teams |
+| [AL Object ID Ninja MCP](https://alguidelines.dev/docs/agentic-coding/communityresources/tools/al-objid-mcp-server/) | MCP | AL lifecycle | experimental | Agents allocate object IDs (upstream archived) |
 | [Microsoft Learn](https://learn.microsoft.com/en-us/training/support/mcp) | MCP | knowledge | core | Official docs and code samples |
 | [BCQuality](https://github.com/microsoft/BCQuality) | plugin | quality | recommended | BC quality rules, AL code review, knowledge skills |
 | [GitHub](https://github.com/github/github-mcp-server) | MCP | devops | recommended | Repos, PRs, issues, AL-Go Actions |

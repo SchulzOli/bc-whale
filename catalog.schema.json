@@ -27,7 +27,7 @@
       "required": ["id", "kind", "category", "status", "owner", "description", "documentation", "access", "auth"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
-        "kind": { "enum": ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp", "external-cli"] },
+        "kind": { "enum": ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp", "external-cli", "external-extension"] },
         "section": { "enum": ["oli-tech"], "description": "Optional grouping, e.g. tools by the bc-whale author" },
         "category": { "enum": ["management", "al-lifecycle", "bc-data", "quality", "knowledge", "devops", "azure", "testing", "workflow"] },
         "status": { "enum": ["core", "recommended", "optional", "experimental", "planned"] },
@@ -70,7 +70,8 @@
           "description": "How whale status recognizes tools without an MCP definition or plugin",
           "properties": {
             "command": { "type": "string", "pattern": "^[a-zA-Z][\\w.-]* --version$" },
-            "mcpArgs": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+            "mcpArgs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "vscodeExtension": { "type": "string", "pattern": "^[a-zA-Z0-9][\\w-]*\\.[a-zA-Z0-9][\\w-]*$" }
           },
           "additionalProperties": false
         }

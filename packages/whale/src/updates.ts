@@ -3,7 +3,7 @@ import { readState, stateFile, writeState } from "./state.js";
 
 export interface UpdateInfo {
   id: string;
-  source: "github" | "npm" | "pypi" | "nuget" | "none";
+  source: "github" | "npm" | "pypi" | "nuget" | "vscode" | "none";
   package?: string;
   latest?: string;
   publishedAt?: string;
@@ -29,6 +29,7 @@ export function upstreamOf(tool: Tool): Pick<UpdateInfo, "source" | "package"> {
     const spec = flag ?? args.find((arg) => !arg.startsWith("-"));
     if (spec) return { source: mcp.command === "npx" ? "npm" : "pypi", package: stripVersion(spec) };
   }
+  if (tool.detect?.vscodeExtension) return { source: "vscode", package: tool.detect.vscodeExtension };
   const nuget = tool.source && /^https:\/\/www\.nuget\.org\/packages\/([^/#?]+)/i.exec(tool.source);
   if (nuget) return { source: "nuget", package: nuget[1] };
   const repository = tool.source && /^https:\/\/github\.com\/([^/]+\/[^/#?]+)/.exec(tool.source);
@@ -50,6 +51,17 @@ async function lookup(id: string, upstream: Pick<UpdateInfo, "source" | "package
       if (!response.ok) return { ...base, error: `pypi ${response.status}` };
       const data = (await response.json()) as { info?: { version?: string }; urls?: { upload_time_iso_8601?: string }[] };
       return { ...base, latest: data.info?.version, publishedAt: data.urls?.[0]?.upload_time_iso_8601, url: `https://pypi.org/project/${upstream.package}/` };
+    }
+    if (upstream.source === "vscode") {
+      const response = await fetcher("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json;api-version=7.1-preview.1" },
+        body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: upstream.package }] }], flags: 0x1 | 0x80 }),
+      });
+      if (!response.ok) return { ...base, error: `vscode marketplace ${response.status}` };
+      const data = (await response.json()) as { results?: { extensions?: { versions?: { version?: string; lastUpdated?: string }[] }[] }[] };
+      const latest = data.results?.[0]?.extensions?.[0]?.versions?.[0];
+      return { ...base, latest: latest?.version, publishedAt: latest?.lastUpdated, url: `https://marketplace.visualstudio.com/items?itemName=${upstream.package}` };
     }
     if (upstream.source === "nuget") {
       const response = await fetcher(`https://api.nuget.org/v3-flatcontainer/${upstream.package!.toLowerCase()}/index.json`);

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type Kind = "internal-plugin" | "external-plugin" | "external-marketplace" | "external-mcp" | "external-cli";
+export type Kind = "internal-plugin" | "external-plugin" | "external-marketplace" | "external-mcp" | "external-cli" | "external-extension";
 export type Status = "core" | "recommended" | "optional" | "experimental" | "planned";
 export type Profile = "core" | "recommended" | "full";
 
@@ -39,7 +39,7 @@ export interface Tool {
   verify?: Step;
   gaps?: string;
   /** How status recognizes tools without an MCP definition or plugin. */
-  detect?: { command?: string; mcpArgs?: string[] };
+  detect?: { command?: string; mcpArgs?: string[]; vscodeExtension?: string };
 }
 
 export interface Catalog {
