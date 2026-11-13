@@ -10,8 +10,8 @@ copilot plugin install whale@bc-whale
 ```
 
 The plugin contributes the `whale` MCP server. The same runtime is a CLI:`node <plugin>/runtime/cli.js`.
-Plugins do not add commands to PATH; see the [root README](../../README.md#quick-start) for a
-one-time launcher, or run `npm link` in a checkout.
+Plugins do not add commands to PATH: `whale setup --launchers` (or the guided question) adds
+`whale` and `bc-whale` launchers to npm's global folder, or run `npm link` in a checkout.
 
 ## CLI
 
@@ -33,6 +33,7 @@ Non-interactive setup:
 whale setup --profile recommended --host copilot vscode --yes
 whale setup --tool azure-devops --input ORGANIZATION=contoso --host vscode --yes
 whale setup --profile full --host copilot --dry-run
+whale setup --tool whale bc-whale --launchers --yes   # CLIs on PATH
 ```
 
 Profiles: `core` (status core), `recommended` (+ recommended), `full` (+ optional).
@@ -54,6 +55,8 @@ and get approval first; `confirmCommands` covers the `copilot plugin` commands.
   Each changed file is copied once per run to `<file>.whale-<timestamp>.bak` (never overwritten).
 - Tools already configured under another name (same URL or command) are left alone.
 - Only `copilot plugin ...` commands from the catalog run; the validator enforces it.
+- Launchers (`--launchers`, `launchers` in `whale_plan`) are written only for own plugins, into
+  `npm prefix -g` (Windows) or its `bin/`. Files whale did not write are reported as `blocked`.
 - No credentials are written. Inputs are plain identifiers such as an organization.
 - Update checks query GitHub releases, npm and PyPI; results are cached for 24 hours
   in `~/.bc-whale/whale-state.json` (`BC_WHALE_HOME` overrides the folder). Set

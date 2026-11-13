@@ -66,31 +66,11 @@ copilot plugin marketplace add SchulzOli/bc-whale
 copilot plugin install whale@bc-whale
 ```
 
-Copilot plugins register MCP servers but do not put commands on PATH. To use the
-CLIs in a terminal, add launchers once (they follow plugin updates):
+Copilot plugins register MCP servers but do not put commands on PATH. To use the CLIs
+in a terminal, let whale add launchers (they follow plugin updates):
 
 ```powershell
-$bin  = npm prefix -g    # a folder already on PATH
-$root = "$env:USERPROFILE\.copilot\installed-plugins\bc-whale"
-foreach ($name in 'whale', 'bc-whale') {
-  "@echo off`r`nnode `"$root\$name\runtime\cli.js`" %*" | Set-Content -Encoding ascii "$bin\$name.cmd"
-}
-```
-Then ask your agent to "set up the recommended Business Central tools with whale",
-or use the CLI from the installed plugin (or a checkout):
-
-```powershell
-whale doctor                    # prerequisites
-whale setup                     # guided: profile, tools, hosts, plan, confirm
-whale status                    # what is configured where
-whale update --check            # latest upstream releases
-```
-## Develop
-
-```powershell
-npm ci --ignore-scripts
-npm --prefix packages/bc-whale ci --ignore-scripts
-npm run verify
+node "$env:USERPROFILE\.copilot\installed-plugins\bc-whale\whale\runtime\cli.js" setup --tool whale bc-whale --launchers
 ```
 
 `build` regenerates the committed, self-contained `packages/bc-whale/runtime/`;

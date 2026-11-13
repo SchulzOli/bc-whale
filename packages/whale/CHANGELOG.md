@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- `setup --launchers` (guided question, `launchers` in `whale_plan`) puts the `whale` and `bc-whale`
+  CLIs on PATH via launchers in npm's global folder; foreign files are never overwritten.
+
 ## 0.2.1
 
 - Bundled catalog: oli-tech section (BC Atlas, AL Design Patterns, BC Lantern) and `external-cli` kind;

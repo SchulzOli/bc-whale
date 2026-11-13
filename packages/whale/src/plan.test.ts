@@ -13,11 +13,12 @@ const catalog = loadCatalog();
 const tools = (...ids: string[]) => ids.map((id) => findTool(catalog, id));
 
 /** Fake copilot: optional plugin list, records invocations. */
-function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string } = {}) {
+function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string } = {}) {
   const calls: string[] = [];
   const runner: Runner = async (command, args) => {
     const line = [command, ...args].join(" ");
     calls.push(line);
+    if (line === "npm prefix -g" && options.npmPrefix) return { code: 0, stdout: `${options.npmPrefix}\n`, stderr: "", started: true };
     if (command !== "copilot" || options.copilot === false) return { code: null, stdout: "", stderr: "not found", started: false };
     if (line === "copilot plugin list") return { code: 0, stdout: options.plugins ?? "Installed plugins:\n", stderr: "", started: true };
     if (line === "copilot plugin marketplace list") return { code: 0, stdout: options.marketplaces ?? "", stderr: "", started: true };
@@ -126,4 +127,38 @@ test("a failed command stops later commands of the same tool", () => withHome(as
   const results = await apply(options, planHash, { confirmCommands: true });
   assert.deepEqual(results.map((r) => r.result), ["failed", "skipped"]);
   assert.ok(!calls.some((call) => call.startsWith("copilot plugin install")));
+}));
+
+test("launchers are opt-in, written for own plugins only, idempotent and never overwrite foreign files", () => withHome(async (home) => {
+  const bin = join(home, "npm");
+  const { runner } = fakeRunner({ plugins: "  • whale@bc-whale (v0.2.1)\n  • bc-whale@bc-whale (v0.1.0)\n", npmPrefix: bin });
+  const base = { tools: tools("whale", "bc-whale", "microsoft-learn"), hosts: ["copilot" as const], home, platform: "win32" as const, runner };
+  assert.ok(!(await plan(base)).steps.some((s) => s.kind === "launcher"));
+  const options = { ...base, launchers: true };
+  const first = await plan(options);
+  const launchers = first.steps.filter((s) => s.kind === "launcher");
+  assert.deepEqual(launchers.map((s) => [s.file, s.action]), [
+    [join(bin, "whale.cmd"), "create"], [join(bin, "whale.ps1"), "create"],
+    [join(bin, "bc-whale.cmd"), "create"], [join(bin, "bc-whale.ps1"), "create"],
+  ]);
+  await apply(options, first.planHash, { confirmCommands: false });
+  const cmd = readFileSync(join(bin, "whale.cmd"), "utf8");
+  assert.ok(cmd.includes(join(home, ".copilot", "installed-plugins", "bc-whale", "whale", "runtime", "cli.js")));
+  assert.ok((await plan(options)).steps.filter((s) => s.kind === "launcher").every((s) => s.action === "unchanged"));
+  writeFileSync(join(bin, "bc-whale.cmd"), "@echo off\r\nnode something-else.js %*\r\n");
+  const foreign = await plan(options);
+  assert.equal(foreign.steps.find((s) => s.file === join(bin, "bc-whale.cmd"))?.action, "blocked");
+  await apply(options, foreign.planHash, { confirmCommands: false });
+  assert.match(readFileSync(join(bin, "bc-whale.cmd"), "utf8"), /something-else/);
+}));
+
+test("launchers use npm's bin folder outside Windows and block without npm", () => withHome(async (home) => {
+  const { runner } = fakeRunner({ plugins: "  • whale@bc-whale (v0.2.1)\n", npmPrefix: "/usr/local" });
+  const unix = await plan({ tools: tools("whale"), hosts: ["copilot"], home, platform: "linux", runner, launchers: true });
+  const step = unix.steps.find((s) => s.kind === "launcher")!;
+  assert.equal(step.file, join("/usr/local", "bin", "whale"));
+  assert.match(step.content!, /^#!\/bin\/sh\n/);
+  const { runner: noNpm } = fakeRunner({ plugins: "  • whale@bc-whale (v0.2.1)\n" });
+  const blocked = await plan({ tools: tools("whale"), hosts: ["copilot"], home, runner: noNpm, launchers: true });
+  assert.equal(blocked.steps.find((s) => s.kind === "launcher")?.action, "blocked");
 }));

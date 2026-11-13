@@ -1,6 +1,6 @@
 {
   "name": "bc-whale-manager",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "repository": { "type": "git", "url": "git+https://github.com/SchulzOli/bc-whale.git", "directory": "packages/whale" },
   "description": "whale: guided CLI and MCP server that sets up, updates, checks and explains the bc-whale tool catalog.",
   "type": "module",

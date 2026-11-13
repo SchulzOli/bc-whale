@@ -9,7 +9,7 @@ import { doctor, status } from "./status.js";
 import { checkUpdates } from "./updates.js";
 
 const server = new McpServer(
-  { name: "whale", version: "0.2.1" },
+  { name: "whale", version: "0.2.2" },
   {
     instructions: [
       "whale manages the Business Central agent toolset described by the bc-whale catalog.",
@@ -69,6 +69,7 @@ server.registerTool("whale_plan", {
     tools: z.array(z.string()).optional().describe("Explicit tool ids (added to the profile)"),
     hosts: z.array(z.enum(HOSTS as [string, ...string[]])).min(1).describe("copilot | vscode | repo"),
     inputs: z.record(z.string(), z.string()).optional().describe("Tool inputs such as ORGANIZATION"),
+    launchers: z.boolean().optional().describe("Also put the whale/bc-whale CLIs on PATH for the user's terminal (launchers in npm's global folder)"),
     repo,
   },
   annotations: { readOnlyHint: true },
@@ -79,6 +80,7 @@ server.registerTool("whale_plan", {
       tools: selectTools(catalog(), { profile: args.profile as never, ids: args.tools }),
       hosts: args.hosts as never,
       inputs: args.inputs ?? {},
+      launchers: args.launchers ?? false,
       repo: args.repo,
     };
     const result = await plan(options);

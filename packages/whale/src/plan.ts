@@ -3,16 +3,19 @@ import type { Tool } from "./catalog.js";
 import { pluginName } from "./catalog.js";
 import { type Runner, run, splitCommand } from "./exec.js";
 import { type HostId, type HostOptions, findEquivalent, hostFile, mergeEntry, readEntries, renderEntry, substitute } from "./hosts.js";
+import { launcherFiles, launcherFolder, launcherState, launcherTools, writeLauncher } from "./launchers.js";
 import { type InstalledPlugins, installedPlugins } from "./status.js";
 
 export interface PlanStep {
   tool: string;
-  kind: "mcp" | "command" | "manual";
+  kind: "mcp" | "command" | "manual" | "launcher";
   action: "create" | "update" | "unchanged" | "run" | "blocked" | "manual";
   host?: HostId;
   file?: string;
   name?: string;
   entry?: Record<string, unknown>;
+  content?: string;
+  mode?: number;
   command?: string;
   detail: string;
 }
@@ -21,6 +24,8 @@ export interface PlanOptions extends HostOptions {
   tools: Tool[];
   hosts: HostId[];
   inputs?: Record<string, string>;
+  /** Also put the CLIs of own plugins on PATH (launchers in npm's global folder). */
+  launchers?: boolean;
   runner?: Runner;
   plugins?: InstalledPlugins;
 }
@@ -94,7 +99,22 @@ export async function plan(options: PlanOptions): Promise<Plan> {
       steps.push({ tool: tool.id, kind: "manual", action: "manual", detail: note });
     }
   }
+  if (options.launchers) steps.push(...(await launcherSteps(options)));
   return { steps, planHash: hashSteps(steps) };
+}
+
+async function launcherSteps(options: PlanOptions): Promise<PlanStep[]> {
+  const tools = launcherTools(options.tools);
+  if (!tools.length) return [];
+  const folder = await launcherFolder(options.runner ?? run, options.platform);
+  if (!folder) return tools.map((tool) => ({ tool: tool.id, kind: "launcher", action: "blocked", detail: "npm not found; cannot locate a folder on PATH" }));
+  return tools.flatMap((tool) => launcherFiles(tool, folder, options).map((launcher): PlanStep => {
+    const state = launcherState(launcher);
+    const base = { tool: tool.id, kind: "launcher" as const, file: launcher.file };
+    if (state === "unchanged") return { ...base, action: "unchanged", detail: `Launcher ${launcher.file} is up to date` };
+    if (state === "foreign") return { ...base, action: "blocked", detail: `${launcher.file} exists and is not managed by whale; remove it to let whale manage it` };
+    return { ...base, action: state, content: launcher.content, ...(launcher.mode ? { mode: launcher.mode } : {}), detail: `${state === "create" ? "Add" : "Refresh"} launcher ${launcher.file} (puts '${tool.id}' on PATH)` };
+  }));
 }
 
 /** Re-plans with the same options and applies only when the result still hashes to the reviewed plan. */
@@ -106,7 +126,18 @@ export async function apply(options: PlanOptions, planHash: string, settings: { 
   const failedTools = new Set<string>();
   const backedUp = new Set<string>();
   for (const step of current.steps) {
-    if (step.action === "create" || step.action === "update") {
+    if (step.kind === "launcher" && (step.action === "create" || step.action === "update")) {
+      if (failedTools.has(step.tool)) {
+        results.push({ ...step, result: "skipped", output: "Plugin installation failed" });
+        continue;
+      }
+      try {
+        writeLauncher({ tool: step.tool, file: step.file!, content: step.content!, mode: step.mode });
+        results.push({ ...step, result: "applied" });
+      } catch (error) {
+        results.push({ ...step, result: "failed", output: (error as Error).message });
+      }
+    } else if (step.action === "create" || step.action === "update") {
       try {
         const outcome = mergeEntry(step.file!, step.host!, step.name!, step.entry!, { now: settings.now, backedUp });
         results.push({ ...step, result: outcome === "unchanged" ? "unchanged" : "applied" });

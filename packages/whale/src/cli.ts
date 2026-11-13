@@ -3,6 +3,7 @@ import { Command, Option } from "commander";
 import { type Catalog, type Profile, PROFILES, type Tool, explain, findTool, loadCatalog, pluginName, selectTools } from "./catalog.js";
 import { run, splitCommand } from "./exec.js";
 import { HOSTS, type HostId, type HostOptions } from "./hosts.js";
+import { launcherTools } from "./launchers.js";
 import { type PlanOptions, type PlanStep, type StepResult, apply, plan } from "./plan.js";
 import { createPrompt } from "./prompt.js";
 import { doctor, status } from "./status.js";
@@ -11,7 +12,7 @@ import { checkUpdates } from "./updates.js";
 const program = new Command()
   .name("whale")
   .description("Set up, update, check and explain the Business Central agent toolset (bc-whale catalog).")
-  .version("0.2.1")
+  .version("0.2.2")
   .option("--json", "machine-readable JSON on stdout")
   .option("--catalog <file>", "catalog.json to use (default: bundled)")
   .option("-r, --repo <path>", "AL repository for the 'repo' host (.vscode/mcp.json)");
@@ -72,12 +73,14 @@ program.command("setup")
   .addOption(new Option("--host <host...>", "hosts to configure").choices(HOSTS))
   .option("--input <NAME=value...>", "values for tool inputs such as ORGANIZATION")
   .option("-y, --yes", "non-interactive: apply the plan, including copilot plugin commands")
+  .option("--launchers", "also put the whale and bc-whale CLIs on PATH (launchers in npm's global folder)")
   .option("--dry-run", "show the plan only")
-  .action(async (options: { profile?: Profile; tool?: string[]; host?: HostId[]; input?: string[]; yes?: boolean; dryRun?: boolean }) => {
+  .action(async (options: { profile?: Profile; tool?: string[]; host?: HostId[]; input?: string[]; launchers?: boolean; yes?: boolean; dryRun?: boolean }) => {
     const data = catalog();
     const inputs = parseInputs(options.input);
     let tools: Tool[];
     let hosts: HostId[];
+    let launchers = options.launchers ?? false;
     const prompt = options.yes ? undefined : createPrompt();
     try {
       if (!prompt) {
@@ -93,15 +96,17 @@ program.command("setup")
         for (const name of new Set(tools.flatMap((tool) => tool.inputs ?? []))) {
           if (!inputs[name]) inputs[name] = await prompt.ask(`${name} (needed by ${tools.filter((t) => t.inputs?.includes(name)).map((t) => t.id).join(", ")}): `);
         }
+        const commands = launcherTools(tools).map((tool) => tool.id);
+        if (options.launchers === undefined && commands.length) launchers = await prompt.confirm(`Also put ${commands.join(" and ")} on PATH for your terminal?`);
       }
-      const planOptions: PlanOptions = { ...hostOptions(), tools, hosts, inputs };
+      const planOptions: PlanOptions = { ...hostOptions(), tools, hosts, inputs, launchers };
       const result = await plan(planOptions);
       if (options.dryRun) return print(result, () => result.steps.map(describeStep).join("\n") + `\nplanHash ${result.planHash}`);
       process.stderr.write(result.steps.map(describeStep).join("\n") + "\n");
       const writes = result.steps.some((step) => step.action === "create" || step.action === "update");
       const commands = result.steps.some((step) => step.action === "run");
       if (!writes && !commands) return print({ steps: result.steps, results: [] }, () => "Nothing to change.");
-      if (prompt && writes && !(await prompt.confirm("Write these MCP entries (existing files are backed up)?"))) return print({ aborted: true }, () => "Aborted; nothing written.");
+      if (prompt && writes && !(await prompt.confirm("Write these MCP entries and launchers (existing host files are backed up)?"))) return print({ aborted: true }, () => "Aborted; nothing written.");
       const confirmCommands = !commands || !prompt ? true : await prompt.confirm("Run the copilot plugin commands?");
       const results = await apply(planOptions, result.planHash, { confirmCommands });
       print(results, () => results.map(describeStep).join("\n") + "\nRestart the agent session, then run each tool's verify step (whale explain <id>).");
