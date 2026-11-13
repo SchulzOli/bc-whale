@@ -12,7 +12,7 @@ import { checkUpdates } from "./updates.js";
 const program = new Command()
   .name("whale")
   .description("Set up, update, check and explain the Business Central agent toolset (bc-whale catalog).")
-  .version("0.2.4")
+  .version("0.2.5")
   .option("--json", "machine-readable JSON on stdout")
   .option("--catalog <file>", "catalog.json to use (default: bundled)")
   .option("-r, --repo <path>", "AL repository for the 'repo' host (.vscode/mcp.json)");

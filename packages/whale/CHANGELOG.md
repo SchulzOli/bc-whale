@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- `status` shows CLI versions without build metadata (`17.0.34.45391` instead of `17.0.34.45391+89dd…`).
+
 ## 0.2.4
 
 - Catalog: ALTool as a core command-line tool (`al --version`); update tracking for NuGet packages.

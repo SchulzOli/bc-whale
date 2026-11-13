@@ -9,7 +9,7 @@ import { doctor, status } from "./status.js";
 import { checkUpdates } from "./updates.js";
 
 const server = new McpServer(
-  { name: "whale", version: "0.2.4" },
+  { name: "whale", version: "0.2.5" },
   {
     instructions: [
       "whale manages the Business Central agent toolset described by the bc-whale catalog.",

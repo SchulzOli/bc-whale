@@ -19,7 +19,7 @@ function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces
     const line = [command, ...args].join(" ");
     calls.push(line);
     if (line === "al --version") return { code: null, stdout: "", stderr: "", started: false };
-    if (line === "bcl --version") return options.bcl ? { code: 0, stdout: "bcl 0.8.0\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
+    if (line === "bcl --version") return options.bcl ? { code: 0, stdout: "bcl 0.8.0+abc123\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
     if (line === "npm prefix -g" && options.npmPrefix) return { code: 0, stdout: `${options.npmPrefix}\n`, stderr: "", started: true };
     if (command !== "copilot" || options.copilot === false) return { code: null, stdout: "", stderr: "not found", started: false };
     if (line === "copilot plugin list") return { code: 0, stdout: options.plugins ?? "Installed plugins:\n", stderr: "", started: true };

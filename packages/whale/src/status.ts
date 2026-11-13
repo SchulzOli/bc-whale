@@ -111,7 +111,7 @@ export async function status(tools: Tool[], options: HostOptions & { runner?: Ru
       const [executable, args] = splitCommand(tool.detect.command);
       const result = await runner(executable, args, { timeoutMs: 30_000 });
       const installed = result.started && result.code === 0;
-      const version = installed ? /\d+\.\d+[\w.+-]*/.exec(result.stdout)?.[0] : undefined;
+      const version = installed ? /\d+\.\d+[\w.-]*/.exec(result.stdout)?.[0] : undefined;
       return { id: tool.id, via: "cli", installed, hosts: [], ...(version ? { version } : {}) };
     }
     return { id: tool.id, via: "unknown", installed: false, hosts: [] };
