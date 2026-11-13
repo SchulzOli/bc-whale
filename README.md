@@ -1,4 +1,4 @@
-# bc-whale 🐋
+# bc-whale <img width="50" height="50" alt="bc-whale-icon" src="https://github.com/user-attachments/assets/0f522095-dfe7-4583-b19f-0bf4976f6701" />
 
 **Business Central Agentic Engineering Tools** — one place to set up, update and
 understand the agent tools you use for Business Central development.
