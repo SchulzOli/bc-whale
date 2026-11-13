@@ -564,7 +564,7 @@ export { cloud };
 export type McpHost = "copilot" | "vscode" | "repo";
 
 function mcpFileFor(host: McpHost, repoRoot: string) {
-  if (host === "copilot") return { file: join(homedir(), ".copilot", "mcp-config.json"), key: "mcpServers" };
+  if (host === "copilot") return { file: join(process.env.COPILOT_HOME || join(homedir(), ".copilot"), "mcp-config.json"), key: "mcpServers" };
   if (host === "vscode") return { file: join(process.env.APPDATA ?? join(homedir(), ".config"), "Code", "User", "mcp.json"), key: "servers" };
   return { file: join(repoRoot, ".vscode", "mcp.json"), key: "servers" };
 }

@@ -5,3 +5,4 @@ dist/
 .env
 .env.*
 *.alcpuprofile
+smoke-report.json

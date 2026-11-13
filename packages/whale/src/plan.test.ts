@@ -72,7 +72,7 @@ test("plan covers mcp, plugin, manual and blocked steps", () => withHome(async (
   const byTool = (id: string) => result.steps.filter((step) => step.tool === id);
   assert.equal(byTool("al-mcp")[0].action, "manual");
   assert.match(byTool("al-mcp")[0].detail, /mcp register --almcp/);
-  assert.deepEqual(byTool("bcquality").map((s) => s.action), ["blocked"]);
+  assert.deepEqual(byTool("bcquality").map((s) => s.action), ["blocked", "blocked"]);
   assert.deepEqual(byTool("microsoft-learn").map((s) => [s.host, s.action]), [["copilot", "create"], ["vscode", "create"]]);
   assert.match(result.planHash, /^[0-9a-f]{64}$/);
 }));
@@ -135,7 +135,7 @@ test("apply writes MCP entries, skips unconfirmed commands, and is idempotent", 
   const options = { tools: tools("microsoft-learn", "bcquality"), hosts: ["copilot" as const], home, runner };
   const first = await plan(options);
   const results = await apply(options, first.planHash, { confirmCommands: false });
-  assert.deepEqual(results.map((r) => [r.tool, r.result]), [["microsoft-learn", "applied"], ["bcquality", "skipped"]]);
+  assert.deepEqual(results.map((r) => [r.tool, r.result]), [["microsoft-learn", "applied"], ["bcquality", "skipped"], ["bcquality", "skipped"]]);
   assert.ok(!calls.some((call) => call.includes("install")));
   assert.equal(JSON.parse(readFileSync(hostFile("copilot", { home }), "utf8")).mcpServers["microsoft-learn"].url, "https://learn.microsoft.com/api/mcp");
   const second = await plan(options);

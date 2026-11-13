@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "bc-whale",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Business Central AL development workflows, diagnostics, tests, containers and profiling.",
   "author": { "name": "SchulzOli" },
   "repository": "https://github.com/SchulzOli/bc-whale",

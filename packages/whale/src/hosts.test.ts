@@ -32,6 +32,15 @@ test("host files follow each client's location", () => {
   assert.equal(hostFile("vscode", { home: "/h", platform: "linux" }), join("/h", ".config", "Code", "User", "mcp.json"));
   assert.equal(hostFile("repo", { repo: "/r" }), join("/r", ".vscode", "mcp.json"));
   assert.throws(() => hostFile("repo", {}), /repository/);
+  const previous = process.env.COPILOT_HOME;
+  process.env.COPILOT_HOME = join("/custom", "copilot");
+  try {
+    assert.equal(hostFile("copilot"), join("/custom", "copilot", "mcp-config.json"));
+    assert.equal(hostFile("copilot", { home: "/h" }), join("/h", ".copilot", "mcp-config.json"));
+  } finally {
+    if (previous === undefined) delete process.env.COPILOT_HOME;
+    else process.env.COPILOT_HOME = previous;
+  }
 });
 
 test("a missing host file is created with the right root key and no backup", () => temp((directory) => {

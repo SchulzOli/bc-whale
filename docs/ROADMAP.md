@@ -4,6 +4,8 @@
 | --- | --- | --- |
 | 0. Init | Repo, MIT license, strict catalog v2, `bc_whale` migrated and renamed, CI | done |
 | 1. `whale` manager | Guided CLI + MCP server: list, doctor, status, setup (plan → apply), update check, explain | done ([plan](superpowers/plans/2026-11-13-whale-manager.md)) |
+| 1b. Setup smoke | Nightly full-profile install on a fresh profile (Windows, Linux): tools installed, MCP servers start, update sources answer | done |
+| 1c. Fix agent | Copilot agent (GitHub Agentic Workflows) that analyses a failed smoke run and opens an issue or fix PR | next |
 | 2. Stay in the loop | Changelog digest per tool since the installed version (`whale news`), installed-version detection for npx/uvx servers | next |
 | 3. Split `bc_whale` | Separate plugins along cohesive workflows (build/test, containers/cloud, profiling, bugfix) where usage shows a need | later |
 | 4. Go public | Secret scan of full history, npm publish, release workflow, issue templates, flip repository to public | later |

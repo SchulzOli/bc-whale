@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.8
+
+- Respects `COPILOT_HOME` for the Copilot CLI host file and launcher targets.
+- BCQuality installs through its marketplace (`bcquality@bcquality`); direct repository installs are deprecated.
+
 ## 0.2.7
 
 - Catalog: AL Object ID Ninja (VS Code extension) and AL Object ID Ninja MCP.

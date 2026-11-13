@@ -130,8 +130,8 @@
       "documentation": "https://github.com/microsoft/BCQuality",
       "access": "read-only",
       "auth": "none",
-      "setup": { "method": "copilot-plugin", "commands": ["copilot plugin install microsoft/BCQuality"] },
-      "update": { "commands": ["copilot plugin update bcquality"] },
+      "setup": { "method": "copilot-plugin", "commands": ["copilot plugin marketplace add microsoft/BCQuality", "copilot plugin install bcquality@bcquality"] },
+      "update": { "commands": ["copilot plugin marketplace update bcquality", "copilot plugin update bcquality@bcquality"] },
       "verify": { "description": "The al-code-review and al-knowledge skills are discovered." },
       "gaps": "Review knowledge, not execution; bc-whale supplies compiler, analyzer and test evidence for its findings."
     },

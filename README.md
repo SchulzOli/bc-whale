@@ -76,7 +76,41 @@ in a terminal, let whale add launchers (they follow plugin updates):
 node "$env:USERPROFILE\.copilot\installed-plugins\bc-whale\whale\runtime\cli.js" setup --tool whale bc-whale --launchers
 ```
 
-`build` regenerates the committed, self-contained `packages/bc-whale/runtime/`;
+Then ask your agent to "set up the full Business Central toolset with whale",
+or use the CLI:
+
+```powershell
+whale doctor                    # prerequisites
+whale setup                     # guided: profile, tools, hosts, plan, confirm
+whale setup bc-lantern          # only this tool; skipped when already installed
+whale status                    # what is configured where
+whale update --check            # latest upstream releases
+```
+
+## Setup smoke
+
+The [Setup smoke](.github/workflows/smoke.yml) workflow runs nightly, on every push and pull request,
+on Windows and Linux. It does what a new customer does: on a fresh profile it installs the **full**
+profile with `whale setup`, then checks that every tool reports as installed, every MCP server starts
+(including those inside the installed plugins and the AL MCP), and every update source and upstream
+repository answers. VS Code extensions are skipped on hosted runners. Run it locally as a plan only:
+
+```powershell
+node scripts/smoke.mjs --allow-blocked copilot,code
+```
+
+`--install` really installs, into a temporary profile with `COPILOT_HOME` pointing there.
+
+## Develop
+
+```powershell
+npm ci --ignore-scripts
+npm --prefix packages/bc-whale ci --ignore-scripts
+npm --prefix packages/whale ci --ignore-scripts
+npm run verify
+```
+
+`build` regenerates the committed, self-contained `runtime/` folders of both packages;
 `validate` enforces the catalog contract; `test` checks the contract and launches
 the packaged MCP/CLI without `node_modules`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

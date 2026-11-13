@@ -145,7 +145,7 @@ test("the packaged whale runs CLI and MCP from its own runtime and bundled catal
     cpSync(join(root, "packages", "whale", "runtime"), join(directory, "runtime"), { recursive: true });
     writeFileSync(join(directory, "package.json"), '{"type":"module"}');
     assert.deepEqual(read(join(directory, "runtime", "catalog.json")), read(join(root, "catalog.json")));
-    const env = { ...process.env, HOME: directory, USERPROFILE: directory, BC_WHALE_HOME: join(directory, ".bc-whale") };
+    const env = { ...process.env, HOME: directory, USERPROFILE: directory, BC_WHALE_HOME: join(directory, ".bc-whale"), COPILOT_HOME: join(directory, ".copilot") };
     delete env.BC_WHALE_CATALOG;
     const cli = spawnSync(process.execPath, [join(directory, "runtime", "cli.js"), "--json", "list"], { encoding: "utf8", timeout: 10000, env });
     assert.equal(cli.status, 0, cli.stderr);

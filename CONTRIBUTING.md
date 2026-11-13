@@ -22,4 +22,6 @@ npm run verify
 - Add tests for behavior you change. Live BC/Docker/cloud checks go in the package's
   `EVALUATIONS.md`, run only against disposable targets you are authorized to use.
 - Never commit secrets, tenant ids, customer data, profiles or personal host configuration.
+- Catalog changes must keep the [setup smoke](.github/workflows/smoke.yml) green; run
+  `node scripts/smoke.mjs --allow-blocked copilot,code` locally for a plan-only check.
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:` ...).

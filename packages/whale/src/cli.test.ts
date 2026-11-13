@@ -11,7 +11,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const here = dirname(fileURLToPath(import.meta.url));
 
 function isolatedEnv(home: string): Record<string, string> {
-  return { ...process.env as Record<string, string>, HOME: home, USERPROFILE: home, APPDATA: join(home, "AppData"), BC_WHALE_HOME: join(home, ".bc-whale") };
+  return { ...process.env as Record<string, string>, HOME: home, USERPROFILE: home, APPDATA: join(home, "AppData"), BC_WHALE_HOME: join(home, ".bc-whale"), COPILOT_HOME: join(home, ".copilot") };
 }
 
 function cli(home: string, ...args: string[]) {

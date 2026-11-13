@@ -14,12 +14,17 @@ export interface HostOptions {
   appData?: string;
 }
 
+/** Copilot CLI state folder: COPILOT_HOME, else ~/.copilot. An explicit home (tests, isolated profiles) wins. */
+export function copilotHome(home?: string): string {
+  return home ? join(home, ".copilot") : process.env.COPILOT_HOME || join(homedir(), ".copilot");
+}
+
 export function hostFile(host: HostId, options: HostOptions = {}): string {
   const home = options.home ?? homedir();
   const platform = options.platform ?? process.platform;
   switch (host) {
     case "copilot":
-      return join(home, ".copilot", "mcp-config.json");
+      return join(copilotHome(options.home), "mcp-config.json");
     case "vscode":
       if (platform === "win32") return join(options.appData ?? process.env.APPDATA ?? join(home, "AppData", "Roaming"), "Code", "User", "mcp.json");
       if (platform === "darwin") return join(home, "Library", "Application Support", "Code", "User", "mcp.json");

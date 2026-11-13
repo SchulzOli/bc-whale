@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Tool } from "./catalog.js";
+import { copilotHome } from "./hosts.js";
 import type { Runner } from "./exec.js";
 
 /** Marker that identifies files whale may overwrite; anything else in the folder is left alone. */
@@ -16,8 +16,8 @@ export interface LauncherFile {
 }
 
 /** Folder of the installed Copilot plugin; the CLI lives in runtime/cli.js and moves with plugin updates. */
-export function pluginRoot(id: string, home = homedir()): string {
-  return join(home, ".copilot", "installed-plugins", MARKETPLACE, id);
+export function pluginRoot(id: string, home?: string): string {
+  return join(copilotHome(home), "installed-plugins", MARKETPLACE, id);
 }
 
 /** Own plugins with a CLI get launchers; third-party tools ship their own installers. */

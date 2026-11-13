@@ -1,0 +1,50 @@
+name: Setup smoke
+
+# A customer-like setup on a fresh profile: install the full profile with whale,
+# then every MCP server must start and every update source must answer.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Full profile (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: astral-sh/setup-uv@v6
+      - name: Install GitHub Copilot CLI
+        run: npm install --global @github/copilot
+      - name: Install smoke client dependencies
+        run: npm --prefix packages/whale ci --ignore-scripts --no-audit --no-fund
+      - name: Run setup smoke
+        # VS Code is not available on hosted runners; the extension install is reported as blocked.
+        run: node scripts/smoke.mjs --install --allow-blocked code --report smoke-report.json
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report-${{ matrix.os }}
+          path: smoke-report.json
+          if-no-files-found: ignore

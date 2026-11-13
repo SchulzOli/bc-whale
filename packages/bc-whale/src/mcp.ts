@@ -10,7 +10,7 @@ import type { Logger } from "./exec.js";
 const MAX_TEXT = 60_000;
 
 const server = new McpServer(
-  { name: "bc_whale", version: "0.2.0" },
+  { name: "bc_whale", version: "0.2.1" },
   {
     instructions: [
       "bc-whale covers the Business Central AL dev life cycle (multi-app repos) with altool only - never use BcContainerHelper.",

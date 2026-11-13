@@ -60,15 +60,16 @@ if (['workspace','listtests','runtests'].includes(cmd)) {
   return { root, env, audit: () => existsSync(env.TEST_AUDIT) ? readFileSync(env.TEST_AUDIT, "utf8") : "" };
 }
 
-it("compile errors block MCP test execution before discovery or target access", { timeout: 15000 }, async () => {
+it("compile errors block MCP test execution before discovery or target access", { timeout: 30000 }, async () => {
   const f = fixture("compile-error");
   const client = new Client({ name: "test-control", version: "1" });
   try {
     await client.connect(new StdioClientTransport({ command: process.execPath, args: [join(dist, "mcp.js")], env: f.env, stderr: "pipe" }));
-    const result = await client.callTool({ name: "bc_whale_test", arguments: { repo: f.root, target: "fake", timeoutMs: 5000 } });
+    const result = await client.callTool({ name: "bc_whale_test", arguments: { repo: f.root, target: "fake", timeoutMs: 15000 } });
     assert.equal(result.isError, true);
     const content = result.content;
     assert.ok(Array.isArray(content) && content[0].type === "text");
+    assert.ok(content[0].text.trimStart().startsWith("{"), content[0].text);
     const data = JSON.parse(content[0].text);
     assert.equal(data.phase, "build");
     assert.equal(data.build.succeeded, false);

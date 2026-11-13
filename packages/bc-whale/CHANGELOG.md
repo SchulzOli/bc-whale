@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- `mcp register --host copilot` respects `COPILOT_HOME`.
+
 ## 0.2.0
 
 - Call graph: `graph build|query|export` CLI and MCP tools `bc_whale_graph_build`, `bc_whale_graph_query`

@@ -1,6 +1,6 @@
 {
   "name": "bc-whale",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": { "type": "git", "url": "git+https://github.com/SchulzOli/bc-whale.git", "directory": "packages/bc-whale" },
   "description": "Business Central AL dev life cycle (symbols, build, publish, test, environments) on top of altool - no BcContainerHelper. CLI + MCP server.",
   "type": "module",
