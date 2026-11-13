@@ -1,0 +1,36 @@
+{
+  "name": "bc-whale",
+  "version": "0.1.0",
+  "repository": { "type": "git", "url": "git+https://github.com/SchulzOli/bc-whale.git", "directory": "packages/bc-whale" },
+  "description": "Business Central AL dev life cycle (symbols, build, publish, test, environments) on top of altool - no BcContainerHelper. CLI + MCP server.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "bc-whale": "dist/cli.js",
+    "bc-whale-mcp": "dist/mcp.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch",
+    "test": "npm run build && node --test \"dist/**/*.test.js\"",
+    "mcp": "node dist/mcp.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "commander": "^15.0.0",
+    "fflate": "^0.8.2",
+    "jsonc-parser": "^3.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,2 @@
+import { createRequire as __bcWhaleCreateRequire } from "node:module"; const require = __bcWhaleCreateRequire(import.meta.url);
+import{I as o,K as e}from"./chunk-PM7B6OCV.js";import{parentPort as t,workerData as i}from"node:worker_threads";try{let r=o.object({file:o.string(),top:o.number().optional(),reportFile:o.string().optional()}).parse(i);t.postMessage({result:e(r.file,r)})}catch(r){t.postMessage({error:r instanceof Error?r.message:String(r)})}

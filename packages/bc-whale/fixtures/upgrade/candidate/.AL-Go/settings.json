@@ -1,0 +1,6 @@
+{
+  "appFolders": ["App"],
+  "testFolders": ["Test"],
+  "enableCodeCop": true,
+  "enableUICop": true
+}

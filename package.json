@@ -1,0 +1,20 @@
+{
+  "name": "bc-whale-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Business Central Agentic Engineering Tools: one place to set up, update and understand the agent tools for Business Central development.",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/SchulzOli/bc-whale.git" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "validate": "node scripts/validate.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "npm run build && npm run validate && npm test && npm --prefix packages/bc-whale test"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.0",
+    "yaml": "2.8.1"
+  }
+}

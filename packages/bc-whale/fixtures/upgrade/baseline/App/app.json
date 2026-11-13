@@ -1,0 +1,10 @@
+{
+  "id": "913ed135-aacb-4631-882a-51e9fce21301",
+  "name": "BcWhaleUpgradeProbe",
+  "publisher": "BcWhale Validation",
+  "version": "1.0.0.0",
+  "application": "29.0.0.0",
+  "platform": "29.0.0.0",
+  "runtime": "18.0",
+  "idRanges": [{ "from": 50200, "to": 50209 }]
+}

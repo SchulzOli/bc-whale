@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tgz
+.bc-whale/
+.env
+.env.*
+*.alcpuprofile

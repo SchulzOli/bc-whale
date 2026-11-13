@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SchulzOli/bc-whale/catalog.schema.json",
+  "title": "bc-whale tool catalog",
+  "type": "object",
+  "required": ["contractVersion", "name", "tools"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "contractVersion": { "const": 2 },
+    "name": { "type": "string" },
+    "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "commands": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "step": {
+      "type": "object",
+      "properties": {
+        "commands": { "$ref": "#/$defs/commands" },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [{ "required": ["commands"] }, { "required": ["description"] }],
+      "additionalProperties": false
+    },
+    "tool": {
+      "type": "object",
+      "required": ["id", "kind", "category", "status", "owner", "description", "documentation", "access", "auth"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "kind": { "enum": ["internal-plugin", "external-plugin", "external-marketplace", "external-mcp"] },
+        "category": { "enum": ["management", "al-lifecycle", "bc-data", "quality", "knowledge", "devops", "azure", "testing", "workflow"] },
+        "status": { "enum": ["core", "recommended", "optional", "experimental", "planned"] },
+        "owner": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "pattern": "^https://" },
+        "path": { "type": "string" },
+        "description": { "type": "string", "minLength": 1 },
+        "documentation": { "type": "string", "minLength": 1 },
+        "access": { "enum": ["read-only", "read-write", "destructive"] },
+        "auth": { "enum": ["none", "host-oauth", "host-credentials", "api-key-env", "azure-cli"] },
+        "prerequisites": { "type": "array", "items": { "type": "string" } },
+        "inputs": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" } },
+        "setup": {
+          "type": "object",
+          "required": ["method"],
+          "properties": {
+            "method": { "enum": ["copilot-plugin", "mcp-local", "manual"] },
+            "commands": { "$ref": "#/$defs/commands" },
+            "note": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["commands"] }, { "required": ["note"] }],
+          "additionalProperties": false
+        },
+        "mcp": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["stdio", "http"] },
+            "command": { "type": "string" },
+            "args": { "type": "array", "items": { "type": "string" } },
+            "url": { "type": "string", "pattern": "^https://" }
+          },
+          "additionalProperties": false
+        },
+        "update": { "$ref": "#/$defs/step" },
+        "verify": { "$ref": "#/$defs/step" },
+        "gaps": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "bc-whale",
+  "owner": { "name": "SchulzOli" },
+  "metadata": {
+    "description": "Business Central Agentic Engineering Tools. Third-party tools are referenced in catalog.json, not redistributed."
+  },
+  "plugins": [
+    {
+      "name": "bc-whale",
+      "description": "Business Central AL workflows, diagnostics, container management and profiling.",
+      "version": "0.1.0",
+      "source": "./packages/bc-whale"
+    }
+  ]
+}
