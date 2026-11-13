@@ -21,7 +21,7 @@ without tool-specific code. `npm run validate` enforces this contract;
 | `auth` | always | `none`, `host-oauth`, `host-credentials`, `api-key-env`, `azure-cli`. |
 | `source` | external | HTTPS upstream (repository or product page). |
 | `path` | own, not planned | Repository-relative package folder. |
-| `setup` | unless `mcp` | `method` (`copilot-plugin`, `mcp-local`, `manual`) plus `commands` or `note`. Commands must be `copilot plugin ...`; `whale` runs them. |
+| `setup` | unless `mcp` | `method` (`copilot-plugin`, `command`, `mcp-local`, `manual`) plus `commands` or `note`. `whale` runs the commands, so only these forms are allowed: `copilot plugin ...`, `pipx install\|upgrade <pkg>`, `dotnet tool install\|update --global <pkg> [--prerelease]`, `npm install --global <pkg>`. `command` setups also need `detect.command`, so installed tools are skipped. |
 | `mcp` | unless `setup` | Host-neutral MCP definition: `stdio` (`command`, `args`) or `http` (`url`, HTTPS). |
 | `inputs` | when used | `UPPER_CASE` placeholders referenced as `{{NAME}}` in `mcp`. |
 | `update` | not planned | `commands` or `description` of how the tool is updated. |

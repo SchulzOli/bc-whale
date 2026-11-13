@@ -45,8 +45,8 @@
       "access": "read-write",
       "auth": "host-credentials",
       "prerequisites": [".NET SDK for the global tool, or the AL Language VS Code extension (bundles altool)"],
-      "setup": { "method": "manual", "note": "dotnet tool install --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease (or install the AL Language extension)" },
-      "update": { "description": "dotnet tool update --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease; the AL Language extension updates through VS Code. bc-whale always uses the newest altool it finds." },
+      "setup": { "method": "command", "commands": ["dotnet tool install --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease"], "note": "Alternatively install the AL Language extension, which bundles altool." },
+      "update": { "commands": ["dotnet tool update --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease"], "description": "The AL Language extension updates through VS Code. bc-whale always uses the newest altool it finds." },
       "verify": { "description": "`al --version` exits 0; `bc-whale doctor` shows which altool bc-whale uses." },
       "detect": { "command": "al --version" },
       "gaps": "bc-whale wraps workspace compile/map, runtests, publishapp, downloadsymbols, graph and the profiling/snapshot proxies; the AL MCP covers launchmcpserver. launchlspserver (LSP for agents) is not wired up yet."
@@ -131,8 +131,8 @@
       "access": "read-only",
       "auth": "host-credentials",
       "prerequisites": ["Python 3.10+", "pipx", "GitHub CLI signed in (gh auth login)"],
-      "setup": { "method": "manual", "note": "pipx install bc-lantern" },
-      "update": { "description": "pipx upgrade bc-lantern" },
+      "setup": { "method": "command", "commands": ["pipx install bc-lantern"] },
+      "update": { "commands": ["pipx upgrade bc-lantern"] },
       "verify": { "description": "`bcl --version` exits 0." },
       "detect": { "command": "bcl --version" }
     },

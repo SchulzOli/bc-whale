@@ -8,7 +8,7 @@
     {
       "name": "whale",
       "description": "Set up, update, check and explain the Business Central agent toolset.",
-      "version": "0.2.5",
+      "version": "0.2.6",
       "source": "./packages/whale"
     },
     {

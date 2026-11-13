@@ -40,22 +40,31 @@ const sections = ["oli-tech"];
 const fields = new Set(["id", "kind", "section", "category", "status", "owner", "source", "path", "description", "documentation",
   "access", "auth", "prerequisites", "inputs", "setup", "mcp", "update", "verify", "gaps", "detect"]);
 const commandList = (value) => Array.isArray(value) && value.length > 0 && value.every(text);
-// whale executes setup/update commands, so only the Copilot plugin lifecycle is allowed.
-const executable = (value) => value === undefined || value.every((command) => /^copilot plugin [a-z][\w@./ -]*$/i.test(command));
+// whale executes setup/update commands: only single-package installs through known package managers.
+// Keep in sync with packages/whale/src/commands.ts.
+const PACKAGE = "[@a-z0-9][\\w@./-]*";
+const allowedCommands = [
+  /^copilot plugin [a-z][\w@./ -]*$/i,
+  new RegExp(`^pipx (install|upgrade) ${PACKAGE}$`, "i"),
+  new RegExp(`^dotnet tool (install|update) --global ${PACKAGE}( --prerelease)?$`, "i"),
+  new RegExp(`^npm install --global ${PACKAGE}$`, "i"),
+];
+const executable = (value) => value === undefined || value.every((command) => allowedCommands.some((pattern) => pattern.test(command)));
 
 function validateStep(entry, name) {
   const step = entry[name];
   requireValue(step && typeof step === "object", `${entry.id}: missing ${name}`);
   requireValue(Object.keys(step).every((key) => ["commands", "description"].includes(key)), `${entry.id}: unknown ${name} field`);
   requireValue(commandList(step.commands) || text(step.description), `${entry.id}: ${name} needs commands or description`);
-  if (name === "update") requireValue(executable(step.commands), `${entry.id}: update commands must be 'copilot plugin ...'`);
+  if (name === "update") requireValue(executable(step.commands), `${entry.id}: update commands must be allowed package-manager installs`);
 }
 
 function validateConnection(entry) {
   if (entry.setup !== undefined) {
-    requireValue(["copilot-plugin", "mcp-local", "manual"].includes(entry.setup.method), `${entry.id}: invalid setup method`);
+    requireValue(["copilot-plugin", "command", "mcp-local", "manual"].includes(entry.setup.method), `${entry.id}: invalid setup method`);
+    if (entry.setup.method === "command") requireValue(commandList(entry.setup.commands) && entry.detect?.command, `${entry.id}: command setup needs commands and detect.command`);
     requireValue(commandList(entry.setup.commands) || text(entry.setup.note), `${entry.id}: setup needs commands or note`);
-    requireValue(executable(entry.setup.commands), `${entry.id}: setup commands must be 'copilot plugin ...'`);
+    requireValue(executable(entry.setup.commands), `${entry.id}: setup commands must be allowed package-manager installs`);
   }
   if (entry.mcp !== undefined) {
     const { mcp } = entry;

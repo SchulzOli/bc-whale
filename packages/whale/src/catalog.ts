@@ -33,7 +33,7 @@ export interface Tool {
   auth: string;
   prerequisites?: string[];
   inputs?: string[];
-  setup?: { method: "copilot-plugin" | "mcp-local" | "manual"; commands?: string[]; note?: string };
+  setup?: { method: "copilot-plugin" | "command" | "mcp-local" | "manual"; commands?: string[]; note?: string };
   mcp?: McpDefinition;
   update?: Step;
   verify?: Step;

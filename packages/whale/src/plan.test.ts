@@ -7,18 +7,20 @@ import { findTool, loadCatalog } from "./catalog.js";
 import type { Runner } from "./exec.js";
 import { hostFile } from "./hosts.js";
 import { apply, plan } from "./plan.js";
-import { doctor, parsePluginList, status } from "./status.js";
+import { doctor, parsePluginList, status, toolDoctor } from "./status.js";
 
 const catalog = loadCatalog();
 const tools = (...ids: string[]) => ids.map((id) => findTool(catalog, id));
 
 /** Fake copilot: optional plugin list, records invocations. */
-function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string; bcl?: boolean } = {}) {
+function fakeRunner(options: { copilot?: boolean; plugins?: string; marketplaces?: string; fail?: string; npmPrefix?: string; bcl?: boolean; pipx?: boolean } = {}) {
   const calls: string[] = [];
   const runner: Runner = async (command, args) => {
     const line = [command, ...args].join(" ");
     calls.push(line);
     if (line === "al --version") return { code: null, stdout: "", stderr: "", started: false };
+    if (line === "pipx --version") return options.pipx ? { code: 0, stdout: "1.7.1\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
+    if (line.startsWith("pipx ")) return { code: 0, stdout: "installed", stderr: "", started: true };
     if (line === "bcl --version") return options.bcl ? { code: 0, stdout: "bcl 0.8.0+abc123\n", stderr: "", started: true } : { code: null, stdout: "", stderr: "", started: false };
     if (line === "npm prefix -g" && options.npmPrefix) return { code: 0, stdout: `${options.npmPrefix}\n`, stderr: "", started: true };
     if (command !== "copilot" || options.copilot === false) return { code: null, stdout: "", stderr: "not found", started: false };
@@ -72,11 +74,26 @@ test("plan covers mcp, plugin, manual and blocked steps", () => withHome(async (
   assert.match(result.planHash, /^[0-9a-f]{64}$/);
 }));
 
-test("CLI-only tools become manual steps with their install note", () => withHome(async (home) => {
-  const result = await plan({ tools: tools("bc-lantern"), hosts: ["copilot"], home });
-  assert.deepEqual(result.steps.map((s) => [s.action, s.detail]), [["manual", "pipx install bc-lantern"]]);
+test("command tools install through their package manager, skip when installed and block without it", () => withHome(async (home) => {
+  const missing = await plan({ tools: tools("bc-lantern"), hosts: ["copilot"], home, runner: fakeRunner().runner });
+  assert.deepEqual(missing.steps.map((s) => s.action), ["blocked"]);
+  assert.match(missing.steps[0].detail, /pipx not found on PATH; first: python -m pip install --user pipx/);
+  const { runner, calls } = fakeRunner({ pipx: true });
+  const options = { tools: tools("bc-lantern"), hosts: ["copilot" as const], home, runner };
+  const ready = await plan(options);
+  assert.deepEqual(ready.steps.map((s) => [s.action, s.command]), [["run", "pipx install bc-lantern"]]);
+  const results = await apply(options, ready.planHash, { confirmCommands: true });
+  assert.equal(results[0].result, "applied");
+  assert.ok(calls.includes("pipx install bc-lantern"));
+  const installed = await plan({ ...options, runner: fakeRunner({ pipx: true, bcl: true }).runner });
+  assert.deepEqual(installed.steps.map((s) => [s.action, s.detail]), [["unchanged", "Installed (0.8.0)"]]);
 }));
 
+test("doctor for named tools lists the executables they need", () => withHome(async () => {
+  const result = await toolDoctor(tools("bc-lantern", "bc-atlas"), fakeRunner().runner);
+  assert.deepEqual(result.map((r) => [r.tool, r.executable, r.found]), [["bc-lantern", "pipx", false], ["bc-lantern", "bcl", false], ["bc-atlas", "npx", false]]);
+  assert.match(result[0].hint!, /pipx/);
+}));
 test("plan skips installed plugins and registered marketplaces", () => withHome(async (home) => {
   const { runner } = fakeRunner({ plugins: "  • whale@bc-whale (v0.2.0)\n", marketplaces: "  • superpowers-marketplace (GitHub: obra/superpowers-marketplace)\n" });
   const result = await plan({ tools: tools("whale", "superpowers"), hosts: ["copilot"], home, runner });

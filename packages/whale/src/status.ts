@@ -1,6 +1,7 @@
 import type { Tool } from "./catalog.js";
 import { pluginName } from "./catalog.js";
-import { type Runner, run, splitCommand } from "./exec.js";
+import { detectInstalled, installHint, isAvailable, requiredExecutables } from "./commands.js";
+import { type Runner, run } from "./exec.js";
 import { type HostId, type HostOptions, findEquivalent, hostFile, readEntries } from "./hosts.js";
 
 export interface Prerequisite {
@@ -19,6 +20,25 @@ const PREREQUISITES: { name: string; args: string[]; purpose: string }[] = [
   { name: "docker", args: ["--version"], purpose: "local BC containers (bc-whale)" },
   { name: "az", args: ["version", "--output", "tsv"], purpose: "Azure MCP and cloud sandboxes" },
 ];
+
+export interface ToolPrerequisite {
+  tool: string;
+  executable: string;
+  found: boolean;
+  hint?: string;
+}
+
+/** Executables the given tools need, checked once each. */
+export async function toolDoctor(tools: Tool[], runner: Runner = run): Promise<ToolPrerequisite[]> {
+  const found = new Map<string, Promise<boolean>>();
+  const rows = tools.flatMap((tool) => requiredExecutables(tool).map((executable) => ({ tool: tool.id, executable })));
+  return Promise.all(rows.map(async (row) => {
+    if (!found.has(row.executable)) found.set(row.executable, isAvailable(row.executable, runner));
+    const ok = await found.get(row.executable)!;
+    const hint = ok ? undefined : installHint(row.executable);
+    return { ...row, found: ok, ...(hint ? { hint } : {}) };
+  }));
+}
 
 export async function doctor(runner: Runner = run): Promise<Prerequisite[]> {
   return Promise.all(PREREQUISITES.map(async ({ name, args, purpose }) => {
@@ -107,13 +127,8 @@ export async function status(tools: Tool[], options: HostOptions & { runner?: Ru
       }
       return { id: tool.id, via: "mcp", installed: found.length > 0, hosts: found, ...(Object.keys(names).length ? { names } : {}) };
     }
-    if (tool.detect?.command) {
-      const [executable, args] = splitCommand(tool.detect.command);
-      const result = await runner(executable, args, { timeoutMs: 30_000 });
-      const installed = result.started && result.code === 0;
-      const version = installed ? /\d+\.\d+[\w.-]*/.exec(result.stdout)?.[0] : undefined;
-      return { id: tool.id, via: "cli", installed, hosts: [], ...(version ? { version } : {}) };
-    }
+    const detected = await detectInstalled(tool, runner);
+    if (detected) return { id: tool.id, via: "cli", installed: detected.installed, hosts: [], ...(detected.version ? { version: detected.version } : {}) };
     return { id: tool.id, via: "unknown", installed: false, hosts: [] };
   }));
 }

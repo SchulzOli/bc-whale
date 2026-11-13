@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.6
+
+- `setup`, `update`, `doctor` and `status` take tool ids: `whale setup bc-lantern` sets up only that tool.
+- New setup method `command`: package-manager installs (`pipx`, `dotnet tool`, `npm --global`), skipped when
+  the tool is detected and blocked with a hint when the package manager is missing. ALTool and BC Lantern use it.
+- `whale update` also runs update commands of installed command-line tools.
+- `whale_doctor` and `whale_status` accept `ids`.
+
 ## 0.2.5
 
 - `status` shows CLI versions without build metadata (`17.0.34.45391` instead of `17.0.34.45391+89dd…`).

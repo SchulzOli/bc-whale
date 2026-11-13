@@ -5,17 +5,17 @@ import { z } from "zod";
 import { PROFILES, explain, findTool, loadCatalog, selectTools } from "./catalog.js";
 import { HOSTS } from "./hosts.js";
 import { type PlanOptions, apply, plan } from "./plan.js";
-import { doctor, status } from "./status.js";
+import { doctor, status, toolDoctor } from "./status.js";
 import { checkUpdates } from "./updates.js";
 
 const server = new McpServer(
-  { name: "whale", version: "0.2.5" },
+  { name: "whale", version: "0.2.6" },
   {
     instructions: [
       "whale manages the Business Central agent toolset described by the bc-whale catalog.",
       "Use whale_list / whale_explain to understand tools, whale_status and whale_doctor to inspect the machine.",
       "To set up tools: call whale_plan, show every step to the user, and only after the user approves call whale_apply with the returned planHash.",
-      "whale_apply only merges MCP entries (with backups) and runs reviewed 'copilot plugin' commands; set confirmCommands only when the user approved those commands.",
+      "whale_apply only merges MCP entries (with backups) and runs reviewed install commands (copilot plugin, pipx, dotnet tool, npm --global); set confirmCommands only when the user approved those commands.",
       "After applying, tell the user to restart the agent session, then run each tool's verify step.",
     ].join("\n"),
   },
@@ -46,17 +46,25 @@ server.registerTool("whale_explain", {
 });
 
 server.registerTool("whale_doctor", {
-  description: "Check local prerequisites (node, npx, uvx, copilot, git, docker, az).",
+  description: "Check local prerequisites (node, npx, uvx, copilot, git, docker, az); with ids, the executables those tools need and how to get missing ones.",
+  inputSchema: { ids: z.array(z.string()).optional() },
   annotations: { readOnlyHint: true },
-}, async () => json(await doctor()));
+}, async ({ ids }) => {
+  try {
+    return json(ids?.length ? await toolDoctor(selectTools(catalog(), { ids })) : await doctor());
+  } catch (error) {
+    return fail(error);
+  }
+});
 
 server.registerTool("whale_status", {
   description: "Which catalog tools are configured as MCP servers or installed as Copilot plugins, and on which hosts.",
-  inputSchema: { repo },
+  inputSchema: { repo, ids: z.array(z.string()).optional() },
   annotations: { readOnlyHint: true },
-}, async ({ repo: path }) => {
+}, async ({ repo: path, ids }) => {
   try {
-    return json(await status(catalog().tools.filter((tool) => tool.status !== "planned"), { repo: path }));
+    const data = catalog();
+    return json(await status(ids?.length ? selectTools(data, { ids }) : data.tools.filter((tool) => tool.status !== "planned"), { repo: path }));
   } catch (error) {
     return fail(error);
   }

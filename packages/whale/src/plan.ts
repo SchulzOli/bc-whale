@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Tool } from "./catalog.js";
 import { pluginName } from "./catalog.js";
+import { detectInstalled, installHint, isAllowedCommand, isAvailable } from "./commands.js";
 import { type Runner, run, splitCommand } from "./exec.js";
 import { type HostId, type HostOptions, findEquivalent, hostFile, mergeEntry, readEntries, renderEntry, substitute } from "./hosts.js";
 import { launcherFiles, launcherFolder, launcherState, launcherTools, writeLauncher } from "./launchers.js";
@@ -94,6 +95,8 @@ export async function plan(options: PlanOptions): Promise<Plan> {
         const earlier = step.action === "run" && steps.find((other) => other.action === "run" && other.command === step.command);
         steps.push(earlier ? { ...step, action: "unchanged", detail: `Same command already planned for ${earlier.tool}` } : step);
       }
+    } else if (tool.setup?.method === "command" && tool.setup.commands?.length) {
+      steps.push(...(await commandSteps(tool, options.runner ?? run)));
     } else {
       const note = tool.setup?.note ?? tool.setup?.commands?.join(" ; ") ?? `See ${tool.documentation}`;
       steps.push({ tool: tool.id, kind: "manual", action: "manual", detail: note });
@@ -101,6 +104,25 @@ export async function plan(options: PlanOptions): Promise<Plan> {
   }
   if (options.launchers) steps.push(...(await launcherSteps(options)));
   return { steps, planHash: hashSteps(steps) };
+}
+
+/** Package-manager installs: skipped when detect finds the tool, blocked when the package manager is missing. */
+async function commandSteps(tool: Tool, runner: Runner): Promise<PlanStep[]> {
+  const detected = await detectInstalled(tool, runner);
+  if (detected?.installed) {
+    return [{ tool: tool.id, kind: "command", action: "unchanged", detail: `Installed${detected.version ? ` (${detected.version})` : ""}` }];
+  }
+  const steps: PlanStep[] = [];
+  for (const command of tool.setup!.commands!) {
+    const executable = splitCommand(command)[0];
+    if (!(await isAvailable(executable, runner))) {
+      const hint = installHint(executable);
+      steps.push({ tool: tool.id, kind: "command", action: "blocked", command, detail: `${executable} not found on PATH${hint ? `; first: ${hint}` : ""}` });
+    } else {
+      steps.push({ tool: tool.id, kind: "command", action: "run", command, detail: command });
+    }
+  }
+  return steps;
 }
 
 async function launcherSteps(options: PlanOptions): Promise<PlanStep[]> {
@@ -149,6 +171,9 @@ export async function apply(options: PlanOptions, planHash: string, settings: { 
         results.push({ ...step, result: "skipped", output: "Commands not confirmed" });
       } else if (failedTools.has(step.tool)) {
         results.push({ ...step, result: "skipped", output: "Earlier command for this tool failed" });
+      } else if (!isAllowedCommand(step.command!)) {
+        failedTools.add(step.tool);
+        results.push({ ...step, result: "failed", output: "Command is not an allowed package-manager install" });
       } else {
         const [executable, args] = splitCommand(step.command!);
         const outcome = await runner(executable, args, { timeoutMs: 300_000 });

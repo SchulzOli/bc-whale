@@ -19,13 +19,21 @@ Plugins do not add commands to PATH: `whale setup --launchers` (or the guided qu
 | --- | --- |
 | `whale list` | All catalog tools with kind, category and status |
 | `whale explain <id>` | Purpose, access, auth, setup, update, verify, gaps, docs |
-| `whale doctor` | Prerequisites: node, npx, uvx, copilot, git, docker, az |
-| `whale status` | Which tools are configured, on which hosts, under which name |
-| `whale setup` | Guided: profile → tools → hosts → inputs → plan → confirm → apply |
-| `whale update` | Latest upstream releases; runs plugin update commands after confirmation |
+| `whale doctor [ids...]` | Prerequisites: node, npx, uvx, copilot, git, docker, az; with ids, what those tools need and how to get it |
+| `whale status [ids...]` | Which tools are configured, on which hosts, under which name |
+| `whale setup [ids...]` | Guided: profile → tools → hosts → inputs → plan → confirm → apply; with ids, only those tools |
+| `whale update [ids...]` | Latest upstream releases; runs the update commands of installed tools after confirmation |
 
 Global options: `--json` (machine-readable stdout), `-r <repo>` (enables the `repo`
 host), `--catalog <file>`.
+
+One tool at a time (installed tools are reported as unchanged, so this only sets up what is missing):
+
+```powershell
+whale doctor bc-lantern         # needs pipx and bcl; shows how to get pipx
+whale setup bc-lantern          # plan, confirm, pipx install bc-lantern
+whale update altool             # latest version, then dotnet tool update after confirmation
+```
 
 Non-interactive setup:
 
@@ -54,7 +62,9 @@ and get approval first; `confirmCommands` covers the `copilot plugin` commands.
   updated; its `env`, `headers`, `tools` and other entries and JSONC comments stay.
   Each changed file is copied once per run to `<file>.whale-<timestamp>.bak` (never overwritten).
 - Tools already configured under another name (same URL or command) are left alone.
-- Only `copilot plugin ...` commands from the catalog run; the validator enforces it.
+- Only catalog commands run, and only these forms: `copilot plugin ...`, `pipx install|upgrade <pkg>`,
+  `dotnet tool install|update --global <pkg> [--prerelease]`, `npm install --global <pkg>`. The validator and
+  `whale` both enforce it. Missing package managers block the step with a hint instead of failing.
 - Launchers (`--launchers`, `launchers` in `whale_plan`) are written only for own plugins, into
   `npm prefix -g` (Windows) or its `bin/`. Files whale did not write are reported as `blocked`.
 - No credentials are written. Inputs are plain identifiers such as an organization.
