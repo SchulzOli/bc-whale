@@ -9,9 +9,9 @@ test("profiles select by status and include lower tiers", () => {
   assert.deepEqual(ids(selectTools(catalog, { profile: "core" })), ["whale", "bc-whale", "al-mcp", "microsoft-learn"]);
   const recommended = ids(selectTools(catalog, { profile: "recommended" }));
   for (const id of ["whale", "bc-whale", "bcquality", "al-design-patterns", "github"]) assert.ok(recommended.includes(id), id);
-  assert.ok(!recommended.includes("context7"));
+  assert.ok(!recommended.includes("markitdown"));
   const full = ids(selectTools(catalog, { profile: "full" }));
-  assert.ok(full.includes("context7") && !full.includes("microsoft-graph-enterprise"));
+  assert.ok(full.includes("markitdown") && !full.includes("microsoft-graph-enterprise"));
 });
 
 test("explicit ids add experimental tools, reject unknown and planned ones", () => {

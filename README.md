@@ -42,8 +42,6 @@ list is [catalog.json](catalog.json) (schema: [catalog.schema.json](catalog.sche
 | [Azure MCP](https://github.com/microsoft/mcp) | MCP | azure | optional | App Insights (BC telemetry), Key Vault, storage |
 | [Azure Skills](https://github.com/microsoft/azure-skills) | plugin | azure | optional | Azure agent skills |
 | [Playwright](https://github.com/microsoft/playwright-mcp) | MCP | testing | optional | BC web client UI automation |
-| [Context7](https://github.com/upstash/context7) | MCP | knowledge | optional | Library docs for non-AL tooling |
-| [codebase-memory](https://github.com/DeusData/codebase-memory-mcp) | MCP | knowledge | optional | Code knowledge graph |
 | [MarkItDown](https://github.com/microsoft/markitdown) | MCP | knowledge | optional | Specs and Office docs to Markdown |
 | [Awesome Copilot](https://github.com/github/awesome-copilot) | marketplace | workflow | optional | Community plugins — pick individually |
 | [Superpowers](https://github.com/obra/superpowers) | plugin | workflow | optional | Brainstorm, plan, TDD, debug, review workflows |

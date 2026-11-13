@@ -114,38 +114,6 @@
       "verify": { "description": "A docs search for 'AL language' returns results." }
     },
     {
-      "id": "context7",
-      "kind": "external-mcp",
-      "category": "knowledge",
-      "status": "optional",
-      "owner": "Upstash",
-      "source": "https://github.com/upstash/context7",
-      "description": "Version-aware library documentation for non-AL code (TypeScript, PowerShell, .NET tooling).",
-      "documentation": "https://github.com/upstash/context7",
-      "access": "read-only",
-      "auth": "api-key-env",
-      "prerequisites": ["Node.js 20+"],
-      "mcp": { "type": "stdio", "command": "npx", "args": ["-y", "@upstash/context7-mcp@latest"] },
-      "update": { "description": "Uses @latest; pin a version for reproducible setups. Never commit an API key." },
-      "verify": { "description": "resolve-library-id returns a match." }
-    },
-    {
-      "id": "codebase-memory",
-      "kind": "external-mcp",
-      "category": "knowledge",
-      "status": "optional",
-      "owner": "DeusData",
-      "source": "https://github.com/DeusData/codebase-memory-mcp",
-      "description": "Local persistent code knowledge graph for structural queries, call tracing and change impact.",
-      "documentation": "https://github.com/DeusData/codebase-memory-mcp",
-      "access": "read-only",
-      "auth": "none",
-      "setup": { "method": "manual", "note": "Install the platform binary from the upstream releases, then register it as a stdio MCP server." },
-      "update": { "description": "Replace the binary with the latest upstream release." },
-      "verify": { "description": "index_status reports an indexed repository." },
-      "gaps": "Verify AL language support upstream before relying on it for AL sources."
-    },
-    {
       "id": "github",
       "kind": "external-mcp",
       "category": "devops",

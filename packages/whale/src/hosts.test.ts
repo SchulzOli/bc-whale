@@ -77,7 +77,7 @@ test("several changes to one file in a run keep the original as the single backu
   const backups = readdirSync(directory).filter((name) => name.endsWith(".bak"));
   assert.deepEqual(backups, ["mcp-config.json.whale-20260102030405.bak"]);
   assert.equal(readFileSync(join(directory, backups[0]), "utf8"), original);
-  mergeEntry(file, "copilot", "context7", renderEntry("copilot", findTool(catalog, "context7"), {}), { now });
+  mergeEntry(file, "copilot", "markitdown", renderEntry("copilot", findTool(catalog, "markitdown"), {}), { now });
   assert.equal(readdirSync(directory).filter((name) => name.endsWith(".bak")).length, 2);
 }));
 
