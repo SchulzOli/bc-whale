@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- Upgrade validation accepts hash-pinned released baseline production packages;
+  only baseline test fixtures are rebuilt, preserving authentic release bytes.
+- Explicit multi-company seed/verify runs detect company-set drift. An optional
+  `failOn: error` retains warnings; the default warning gate remains strict.
+- CLI/MCP expose the same inputs and retain package/diagnostic/per-company evidence.
+  AL developer guidance favors disposable runtime checks before repeated CI runs.
+- Existing source-baseline and single-company calls remain supported. No live BC
+  upgrade acceptance is implied by synthetic tests. Roll back by reinstalling
+  0.2.1; previously generated validation evidence remains local and unchanged.
+
 ## 0.2.1
 
 - `mcp register --host copilot` respects `COPILOT_HOME`.

@@ -60,7 +60,13 @@ program.command("validate").description("validate baseline -> persistent seed ->
   .requiredOption("--baseline-repo <path>", "separate baseline repository")
   .requiredOption("-p, --projects <names>", "explicit production and test apps, no wildcards", list)
   .requiredOption("-t, --target <name>", "explicit disposable target")
-  .requiredOption("--company <name>", "dedicated validation company")
+  .option("--company <name>", "dedicated validation company (exclusive with --companies)")
+  .option("--companies <names>", "explicit dedicated companies, comma separated; checks company-set drift", list)
+  .option("--baseline-package <sha256=path>", "hash-pinned released baseline .app; repeat for every selected production app", (value: string, previous: { file: string; sha256: string }[] = []) => {
+    if (!/^[a-f0-9]{64}=.+$/i.test(value)) throw new Error("Expected SHA256=absolute-package-path.");
+    return previous.concat({ sha256: value.slice(0, 64), file: value.slice(65) });
+  })
+  .addOption(new Option("--fail-on <severity>", "build threshold; warnings still reported (default warning)").choices(["error", "warning"]))
   .requiredOption("--seed-codeunits <list>", "baseline seed test codeunits", list)
   .requiredOption("--seed-methods <list>", "baseline persistent seed methods", list)
   .requiredOption("--verify-codeunits <list>", "candidate verification codeunits", list)
@@ -69,6 +75,7 @@ program.command("validate").description("validate baseline -> persistent seed ->
   .addOption(timeoutOpt())
   .action((o) => run(() => api.validateLifecycle(ctx({
     baselineRepo: o.baselineRepo, projects: o.projects, target: o.target, company: o.company,
+    companies: o.companies, baselinePackages: o.baselinePackage, failOn: o.failOn,
     seedCodeunits: o.seedCodeunits, seedMethods: o.seedMethods, verifyCodeunits: o.verifyCodeunits,
     verifyMethods: o.verifyMethods, authorizedDisposableTarget: o.authorizedDisposableTarget === true, timeoutMs: o.timeoutMs,
   }))));

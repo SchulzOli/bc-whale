@@ -26,6 +26,25 @@ Use this agent to build, deploy and test AL apps in any BC repository (AL-Go, mu
 6. On test failures: read `failures[].message` and `callStack`, fix, repeat step 5.
 7. Releases: `bc_whale_version` (bump, keeps in-repo dependency versions consistent).
 
+## Migration and CI validation
+
+- Discover `bc_whale_validate` before writing custom baseline/seed/upgrade/assertion
+  orchestration. Use `baselinePackages` with trusted release hashes when acceptance
+  requires authentic released binaries; compiling historical sources is not equivalent.
+- Use an explicitly owned disposable target: inspect targets and run `bc_whale_target_check`,
+  then resolve dependencies with `bc_whale_deps`. Check installed apps when dependency or
+  toolkit installation fails; do not keep retrying the same artifact compilation failure.
+- Run scoped publish/tests or a cycle locally before repeating expensive CI jobs.
+  A successful compile or mocked hook regression is not runtime/data-preservation evidence.
+- For preservation checks, select explicit companies and exact persistent seed/verification
+  test methods. Keep the default warning gate unless the task explicitly permits retaining
+  warnings; record any `failOn: error` choice without suppressing diagnostics.
+- Prefer MCP tools in interactive sessions and the supported bc-whale CLI in CI.
+  An AL-Go runner cannot call a VS Code session's MCP tool directly. Keep any necessary
+  AL-Go integration thin; do not replace unrelated signing, delivery or acceptance gates.
+- Preserve existing repository workflows unless a replacement proves the same required
+  binary identities, company coverage and evidence. Missing authentic releases stay blocked.
+
 ## Call graph
 
 Use `bc_whale_graph_query` for who-calls-what across apps (events, interfaces, triggers) before changing a

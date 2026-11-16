@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join } from "node:path";
 import { resolveAltool, runAltool } from "./altool.js";
 import { resolveAnalyzers } from "./analyzers.js";
 import { build } from "./build.js";
@@ -19,7 +19,10 @@ export interface LifecycleOptions {
   baselineRepo: string;
   projects: string[];
   target: string;
-  company: string;
+  company?: string;
+  companies?: string[];
+  baselinePackages?: { file: string; sha256: string }[];
+  failOn?: "error" | "warning";
   seedCodeunits: string[];
   seedMethods: string[];
   verifyCodeunits: string[];
@@ -48,7 +51,19 @@ function testEvidence(result: TestResult): StageResult {
 /** An explicit disposable-target exercise, not a deployment or rollback command. */
 export async function validateLifecycle(o: LifecycleOptions) {
   if (o.authorizedDisposableTarget !== true) throw new Error("Explicit authorizedDisposableTarget acknowledgement is required.");
-  if (!o.target?.trim() || !o.company?.trim()) throw new Error("Explicit target and dedicated company are required.");
+  if (!o.target?.trim()) throw new Error("Explicit target and dedicated company are required.");
+  if (o.company !== undefined && o.companies !== undefined) throw new Error("Choose company or companies, not both.");
+  const companies = o.companies ?? (o.company !== undefined ? [o.company] : []);
+  if (!companies.length || companies.some((c) => !c.trim() || c !== c.trim()) ||
+      new Set(companies.map((c) => c.toLowerCase())).size !== companies.length) {
+    throw new Error("Explicit unique dedicated company names are required.");
+  }
+  const failOn = o.failOn ?? "warning";
+  if (failOn !== "error" && failOn !== "warning") throw new Error("Validation failOn must be error or warning.");
+  if (o.baselinePackages !== undefined && (!o.baselinePackages.length || o.baselinePackages.some((p) =>
+    !isAbsolute(p.file) || !/\.app$/i.test(p.file) || !/^[a-f0-9]{64}$/i.test(p.sha256)))) {
+    throw new Error("Released baseline packages require absolute .app paths and SHA-256 hashes.");
+  }
   for (const [name, values] of Object.entries({
     projects: o.projects, seedCodeunits: o.seedCodeunits, seedMethods: o.seedMethods,
     verifyCodeunits: o.verifyCodeunits, verifyMethods: o.verifyMethods,
@@ -78,7 +93,9 @@ export async function validateLifecycle(o: LifecycleOptions) {
   const reportFile = join(workDir(candidate, "validation", id), "report.json");
   const metadata = {
     id, reportFile, scope: "upgrade-and-data", baselineRepo: baseline.root, repo: candidate.root,
-    target: o.target, targetType: target.type, company: o.company,
+    target: o.target, targetType: target.type, company: o.company, companies, failOn,
+    baselineMode: o.baselinePackages ? "released-packages" : "source",
+    baselinePackagePins: o.baselinePackages,
     baselineApps: oldApps, candidateApps: apps,
     diagnostics: {
       snapshot: { status: "not-run", reason: "Separate authorized official proxy capture required." },
@@ -90,6 +107,8 @@ export async function validateLifecycle(o: LifecycleOptions) {
   let server: { version?: string; authentication?: string } = {};
   let before: InputSnapshot;
   let after: InputSnapshot;
+  let companySnapshot: string[] = [];
+  let releasedEvidence: { file: string; sha256: string; app: ValidationApp }[] | undefined;
   const baselinePackages = join(dirname(reportFile), "baseline-packages");
   const candidatePackages = join(dirname(reportFile), "candidate-packages");
   const identity = async (repo: typeof candidate, config: typeof cfg) => {
@@ -116,16 +135,79 @@ export async function validateLifecycle(o: LifecycleOptions) {
     }
     return value;
   };
+  const inspectCompanies = async (): Promise<string[]> => {
+    if (target.type !== "docker") throw new Error("Company inspection unavailable for this target.");
+    const text = await invokeInContainer(target.container,
+      "$companies = @(Get-NAVCompany -ServerInstance BC -Tenant default | ForEach-Object { $_.CompanyName }); Write-Output ('##COMPANIES##' + (ConvertTo-Json -InputObject $companies -Compress))", log);
+    const line = text.split(/\r?\n/).find((l) => l.startsWith("##COMPANIES##"));
+    const value: unknown = line ? JSON.parse(line.slice("##COMPANIES##".length)) : undefined;
+    if (!Array.isArray(value) || !value.every((c): c is string => typeof c === "string" && c.trim().length > 0) ||
+        new Set(value).size !== value.length || companies.some((c) => !value.includes(c))) {
+      throw new Error("Dedicated validation companies could not be verified.");
+    }
+    return value.sort();
+  };
+  const checkCompanies = async (): Promise<StageResult> => {
+    const current = await inspectCompanies();
+    if (o.companies && JSON.stringify(current) !== JSON.stringify(companySnapshot)) {
+      throw new Error("Validation company set changed after preflight; inspect target state before retrying.");
+    }
+    return { status: "passed", evidence: { companies, companySnapshot: current } };
+  };
+  const archiveReleasedPackages = async () => {
+    const expected = oldSelected.filter((p) => !p.isTest).map((p) => p.app);
+    const receipts: { file: string; sha256: string; app: ValidationApp }[] = [];
+    if (o.baselinePackages!.length !== expected.length) throw new Error("Supply exactly one released package for every selected baseline production app.");
+    mkdirSync(baselinePackages, { recursive: true });
+    for (const [index, pin] of o.baselinePackages!.entries()) {
+      const file = join(baselinePackages, `released-${index}.app`);
+      copyFileSync(pin.file, file);
+      const sha256 = createHash("sha256").update(readFileSync(file)).digest("hex");
+      if (sha256 !== pin.sha256.toLowerCase()) throw new Error(`Released baseline package SHA-256 mismatch: ${pin.file}`);
+      const manifest = await runAltool<ValidationApp>(["gpm", file], { stream: false, log, timeoutMs: o.timeoutMs });
+      const app = manifest.json;
+      if (manifest.exitCode !== 0 || !app || ![app.id, app.name, app.publisher, app.version].every((v) => typeof v === "string")) {
+        throw new Error(`Released baseline manifest inspection failed: ${pin.file}`);
+      }
+      const match = expected.find((a) => a.id.toLowerCase() === app.id.toLowerCase());
+      if (!match || receipts.some((r) => r.app.id.toLowerCase() === app.id.toLowerCase())) {
+        throw new Error("Released baseline package identity is unexpected or duplicated.");
+      }
+      assertInstalledApps([match], [app]);
+      if (createHash("sha256").update(readFileSync(file)).digest("hex") !== sha256) throw new Error("Released baseline package changed during inspection.");
+      const archived = join(baselinePackages, appFileName(match));
+      renameSync(file, archived);
+      const expectedName = appFileName(match).toLowerCase();
+      const prefix = appFileName({ ...match, version: "" }).slice(0, -4).toLowerCase();
+      if (readdirSync(outputDir(baseline)).some((name) =>
+        name.toLowerCase().startsWith(prefix) && name.toLowerCase().endsWith(".app") && name.toLowerCase() !== expectedName)) {
+        throw new Error("Competing baseline production output has another version. Use a clean baseline repository; existing files were not removed.");
+      }
+      copyFileSync(archived, join(outputDir(baseline), appFileName(match)));
+      receipts.push({ file: archived, sha256, app });
+    }
+    return receipts;
+  };
   const prepare = async (repo: typeof candidate, config: typeof cfg): Promise<StageResult> => {
     const symbols = await downloadSymbols(repo, config, { projects: o.projects, log });
     if (!symbols.projects.length || !symbols.projects.every((p) => p.succeeded)) return { status: "failed", reason: "Symbols failed.", evidence: symbols };
+    const released = repo === baseline && o.baselinePackages ? await archiveReleasedPackages() : undefined;
+    if (released) releasedEvidence = released;
     const inputs = await identity(repo, config);
-    const result = await build(repo, config, { projects: o.projects, includeDependencies: true, failOn: "warning", log, timeoutMs: o.timeoutMs });
+    const result = await build(repo, config, {
+      projects: released ? oldTests : o.projects, includeDependencies: !released,
+      failOn, autoSymbols: false, log, timeoutMs: o.timeoutMs,
+    });
     const fresh = await identity(repo, config);
     if (inputs.shared !== fresh.shared || JSON.stringify(inputs.sources) !== JSON.stringify(fresh.sources)) {
       return { status: "failed", reason: "Inputs changed during preparation; no package may be deployed.", evidence: result };
     }
-    return { status: result.succeeded ? "passed" : "failed", reason: result.succeeded ? undefined : "Fresh strict build failed.", evidence: result };
+    if (released?.some((r) => fresh.outputs[r.app.id] !== r.sha256)) throw new Error("Released baseline package changed during preparation.");
+    return {
+      status: result.succeeded ? "passed" : "failed",
+      reason: result.succeeded ? undefined : `Fresh build failed (failOn: ${failOn}).`,
+      evidence: result,
+    };
   };
   const discovery = async (repo: typeof candidate, ids: string[], codeunits: string[], methods: string[], folder: string) => {
     const groups: unknown[] = [];
@@ -190,21 +272,18 @@ export async function validateLifecycle(o: LifecycleOptions) {
         const info = await inspectContainer(target.container);
         server = { version: info.bcVersion, authentication: info.auth };
         connection = await resolveConnection(target);
-        const company = Buffer.from(o.company).toString("base64");
-        const companyCheck = await invokeInContainer(target.container,
-          `$company = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${company}')); if (-not (Get-NAVCompany -ServerInstance BC -Tenant default | Where-Object { $_.CompanyName -ceq $company })) { throw 'Dedicated validation company not found.' }; Write-Output '##COMPANY-OK##'`, log);
-        if (!companyCheck.includes("##COMPANY-OK##")) throw new Error("Dedicated validation company could not be verified.");
+        companySnapshot = await inspectCompanies();
         const have = await installed();
         const conflicts = have.filter((a) => apps.some((b) => b.id.toLowerCase() === a.id.toLowerCase()));
         if (conflicts.length) return { status: "blocked", reason: "Fixture apps are already installed. Use a fresh authorized target; no downgrade or uninstall is attempted.", evidence: conflicts };
-        return { status: "passed", evidence: { ...server, installedApps: have } };
+        return { status: "passed", evidence: { ...server, installedApps: have, companies, companySnapshot } };
       } },
       { name: "prepare-baseline", run: async () => {
         const result = await prepare(baseline, oldCfg);
         if (result.status === "passed") {
           before = await identity(baseline, oldCfg);
           freezePackages(baseline, before, baselinePackages);
-          result.evidence = { build: result.evidence, inputs: before, packageFolder: baselinePackages };
+          result.evidence = { build: result.evidence, releasedPackages: releasedEvidence, inputs: before, packageFolder: baselinePackages };
         }
         return result;
       } },
@@ -221,23 +300,27 @@ export async function validateLifecycle(o: LifecycleOptions) {
       { name: "discover-verification-tests", run: () => discovery(candidate, tests, o.verifyCodeunits, o.verifyMethods, candidatePackages) },
       { name: "publish-baseline", run: () => deploy(baseline, oldCfg, before, baselinePackages) },
       { name: "installed-baseline", run: async () => { const have = await installed(); assertInstalledApps(oldApps, have); return { status: "passed", evidence: have }; } },
-      { name: "seed-data", run: async () => {
+      ...companies.map((company, index) => ({ name: companies.length === 1 ? "seed-data" : `seed-data:${index + 1}`, run: async () => {
         await unchanged(baseline, oldCfg, before);
         checkPackages(baseline, before, baselinePackages);
-        return archiveTests("seed", await runTests(baseline, connection, { projects: oldTests, packageFolder: baselinePackages, company: o.company, codeunits: o.seedCodeunits, methods: o.seedMethods, timeoutMs: o.timeoutMs, log }));
-      } },
+        const result = archiveTests(`seed-${index + 1}`, await runTests(baseline, connection, { projects: oldTests, packageFolder: baselinePackages, company, codeunits: o.seedCodeunits, methods: o.seedMethods, timeoutMs: o.timeoutMs, log }));
+        return { ...result, evidence: { company, tests: result.evidence } };
+      } })),
+      { name: "companies-before-upgrade", run: checkCompanies },
       { name: "publish-candidate", run: () => deploy(candidate, cfg, after, candidatePackages) },
       { name: "installed-candidate", run: async () => { const have = await installed(); assertInstalledApps(apps, have); return { status: "passed", evidence: have }; } },
-      { name: "verify-data", run: async () => {
+      { name: "companies-after-upgrade", run: checkCompanies },
+      ...companies.map((company, index) => ({ name: companies.length === 1 ? "verify-data" : `verify-data:${index + 1}`, run: async () => {
         await unchanged(candidate, cfg, after);
         checkPackages(candidate, after, candidatePackages);
-        return archiveTests("verify", await runTests(candidate, connection, { projects: tests, packageFolder: candidatePackages, company: o.company, codeunits: o.verifyCodeunits, methods: o.verifyMethods, timeoutMs: o.timeoutMs, log }));
-      } },
+        const result = archiveTests(`verify-${index + 1}`, await runTests(candidate, connection, { projects: tests, packageFolder: candidatePackages, company, codeunits: o.verifyCodeunits, methods: o.verifyMethods, timeoutMs: o.timeoutMs, log }));
+        return { ...result, evidence: { company, tests: result.evidence } };
+      } })),
     ], (report) => {
-      writeFileSync(`${reportFile}.tmp`, JSON.stringify({ ...metadata, server, ...report }, null, 2));
+      writeFileSync(`${reportFile}.tmp`, JSON.stringify({ ...metadata, releasedBaselinePackages: releasedEvidence, server, ...report }, null, 2));
       renameSync(`${reportFile}.tmp`, reportFile);
     });
-    return { ...metadata, server, ...report };
+    return { ...metadata, releasedBaselinePackages: releasedEvidence, server, ...report };
   } finally {
     closeSync(fd);
     unlinkSync(lock);
