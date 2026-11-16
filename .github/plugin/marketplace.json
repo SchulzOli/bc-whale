@@ -14,7 +14,7 @@
     {
       "name": "bc-whale",
       "description": "Business Central AL workflows, diagnostics, container management and profiling.",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "source": "./packages/bc-whale"
     }
   ]

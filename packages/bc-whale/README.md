@@ -300,16 +300,57 @@ claim that an arbitrary hung BC server session can be cancelled remotely.
 candidate upgrade -> data assertions**, using the same lifecycle core. This is
 an explicitly authorized disposable-target scenario, not production deployment.
 It requires separate baseline/candidate repository roots, explicit production
-and test apps, a dedicated existing company, exact seed/verification codeunit
+and test apps, dedicated existing companies, exact seed/verification codeunit
 and method selectors, and `authorizedDisposableTarget: true`.
 
-The workflow freshly downloads symbols and compiles both versions with
+By default the workflow freshly downloads symbols and compiles both versions with
 `failOn: warning`, verifies that **every selected app** retains its identity and
 increases its version, resolves every test selector before publishing, and
 checks source/configuration/compiler/analyzer/package hashes before execution.
 Selected in-repo dependencies are included and must increase versions too.
 Packages are copied into the run archive and used for publish and test discovery,
 not silently replaced by subsequent normal builds.
+
+For an **authentic released-binary baseline**, supply `baselinePackages` as an
+array of `{ file, sha256 }` pins. Paths must be absolute `.app` paths; hashes must
+come from your trusted release inventory. Supply exactly one package for every
+selected baseline production app, including selected in-repo production
+dependencies. The baseline repository manifests must describe those exact
+identities and versions. The validator archives and hashes the supplied bytes,
+inspects their manifests through `altool gpm`, and compiles **only the baseline
+test fixtures** against those production packages. It never substitutes freshly
+compiled old production sources for the release. Test fixtures must expose
+discoverable seed test methods; raw codeunit `OnRun` calls are not test selectors.
+Candidate apps and test fixtures still compile freshly. The report distinguishes
+`baselineMode: released-packages` from `baselineMode: source` and records package
+pins, archived manifests and hashes. A missing historical release is still a
+blocker; this command cannot manufacture release provenance.
+Competing generated versions of a pinned production app in the baseline output
+folder block preparation rather than shadowing the release or being deleted.
+Use a clean baseline checkout.
+
+Use `company` for one company, or `companies` for an explicit list, never both.
+Every selected company receives seed tests before the single candidate upgrade
+and verification tests afterward, with separate stage results and raw test files.
+With `companies`, the complete company-name snapshot must also remain unchanged
+before and after the upgrade. Companies are never created or selected implicitly.
+
+`failOn: error` is an explicit opt-in for migrations retaining existing warnings.
+It keeps every configured analyzer enabled and retains warning diagnostics;
+compiler errors and analyzer execution failures still fail. The report records
+the chosen threshold. Do not select it automatically to turn a failed run green.
+
+CLI equivalents of these optional inputs (append to the example below):
+
+```powershell
+# Replace --company with --companies for a multi-company run.
+--companies BcWhaleValidation,BcWhaleValidation2 `
+--baseline-package '<trusted-64-character-sha256>=C:\Releases\ReleasedProduction.app' `
+--fail-on error
+```
+
+Repeat `--baseline-package SHA256=absolute-path` for each selected baseline
+production app. Omit it to retain source-baseline compilation.
 
 Baseline and candidate targets are never merged: only the candidate's explicitly
 named target is used throughout. A target-wide cross-repository lock prevents

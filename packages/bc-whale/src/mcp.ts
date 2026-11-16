@@ -67,9 +67,12 @@ function tool<S extends z.ZodRawShape>(name: string, description: string, shape:
 // ---------------- repo & life cycle ----------------
 
 tool("bc_whale_doctor", "Check prerequisites: altool version, docker, az login, git, config location.", {}, () => api.doctor());
-tool("bc_whale_validate", "Validate a baseline-to-candidate upgrade on an explicitly authorized disposable target and dedicated company. Seeds persistent data, verifies installed versions and runs data assertions. Synchronize only; never cleans up, downgrades or calls the SaaS Admin API. Non-Docker installed-version inspection is currently blocked. Snapshot/profiling remain separate captures.", {
+tool("bc_whale_validate", "Validate a baseline-to-candidate upgrade on an authorized disposable Docker target. Use company or explicit companies. Optional hash-pinned baselinePackages replace production baseline builds; baseline test fixtures still compile. Warnings fail by default; failOn:error retains warnings. Seeds persistent data and verifies installed versions and preservation. Synchronize only; no cleanup, downgrade or SaaS Admin API. Non-Docker inspection is blocked; captures are separate.", {
   repo, baselineRepo: z.string().min(1), projects: z.array(z.string().min(1)).min(1),
-  target: z.string().min(1), company: z.string().min(1),
+  target: z.string().min(1), company: z.string().min(1).optional(),
+  companies: z.array(z.string().min(1)).min(1).optional(),
+  baselinePackages: z.array(z.object({ file: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/i) })).min(1).optional(),
+  failOn: z.enum(["error", "warning"]).optional(),
   seedCodeunits: z.array(z.string().min(1)).min(1), seedMethods: z.array(z.string().min(1)).min(1),
   verifyCodeunits: z.array(z.string().min(1)).min(1), verifyMethods: z.array(z.string().min(1)).min(1),
   authorizedDisposableTarget: z.boolean(), timeoutMs,
