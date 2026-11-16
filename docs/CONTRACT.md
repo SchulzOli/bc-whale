@@ -38,7 +38,8 @@ Unknown fields are rejected. `planned` entries only need the always-required fie
    publisher ships a plugin, reference it instead of an MCP definition.
 2. **No secrets.** `mcp` must not contain headers, tokens or keys. Use host OAuth or
    documented environment variables.
-3. **Portable.** No absolute or machine-specific paths. Repository-specific servers
+3. **Portable.** No absolute or machine-specific paths, including Windows and POSIX
+   absolute paths regardless of the host operating system. Repository-specific servers
    (such as the AL MCP) use `setup.method: mcp-local` with a note.
 4. **Verify is read-only.** Never mutate business data, create environments or
    publish apps as a health check.

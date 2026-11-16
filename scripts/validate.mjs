@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { join, posix, relative, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
 const read = (file) => JSON.parse(readFileSync(file, "utf8"));
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
 const text = (value) => typeof value === "string" && value.trim().length > 0;
+const isAbsolute = (value) => posix.isAbsolute(value) || win32.isAbsolute(value);
 const https = (value) => { try { return new URL(value).protocol === "https:"; } catch { return false; } };
 const identifier = /^[a-z][a-z0-9-]*$/;
 const version = /^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$/;

@@ -44,6 +44,52 @@ test("the contract rejects duplicate identities, missing ownership and source pa
   }
 });
 
+test("catalog paths reject Windows and POSIX absolute forms even on a POSIX host", () => {
+  const directory = mkdtempSync(join(tmpdir(), "bc-whale-portable-paths-"));
+  try {
+    cpSync(root, directory, { recursive: true, filter: (source) => !/[\\/](node_modules|dist|\.git)([\\/]|$)/.test(source) });
+    const validator = pathToFileURL(join(root, "scripts", "validate.mjs")).href;
+    const result = spawnSync(process.execPath, ["--experimental-test-module-mocks", "--input-type=module", "-e", `
+      import assert from "node:assert/strict";
+      import { readFileSync, writeFileSync } from "node:fs";
+      import { mock } from "node:test";
+      import * as path from "node:path";
+      // Load the CJS dependency before the path mock also affects its loader.
+      import "yaml";
+      mock.module("node:path", { namedExports: {
+        ...path, posix: { ...path.posix }, win32: { ...path.win32 }, isAbsolute: path.posix.isAbsolute,
+      } });
+      const { validateLibrary } = await import(${JSON.stringify(validator)});
+      const directory = process.env.BC_WHALE_TEST_LIBRARY;
+      const file = path.join(directory, "catalog.json");
+      const original = JSON.parse(readFileSync(file, "utf8"));
+      assert.doesNotThrow(() => validateLibrary(directory));
+      for (const value of [
+        "C:\\\\tools\\\\playwright.js", "C:/tools/playwright.js",
+        "\\\\\\\\server\\\\share\\\\playwright.js", "/opt/tools/playwright.js",
+      ]) {
+        for (const field of ["command", "args"]) {
+          const catalog = structuredClone(original);
+          const entry = catalog.tools.find(e => e.id === "playwright");
+          entry.mcp[field] = field === "args" ? [value] : value;
+          writeFileSync(file, JSON.stringify(catalog));
+          assert.throws(() => validateLibrary(directory), /portable command|machine-specific/, field + ": " + value);
+        }
+      }
+      writeFileSync(file, JSON.stringify(original));
+      const entry = original.tools.find(e => e.id === "bc-whale");
+      const mcpFile = path.join(directory, entry.path, "mcp.json");
+      const mcp = JSON.parse(readFileSync(mcpFile, "utf8"));
+      Object.values(mcp.mcpServers)[0].args = ["C:\\\\tools\\\\server.js"];
+      writeFileSync(mcpFile, JSON.stringify(mcp));
+      assert.throws(() => validateLibrary(directory), /machine-specific/);
+    `], { encoding: "utf8", timeout: 10000, env: { ...process.env, BC_WHALE_TEST_LIBRARY: directory } });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("the contract requires lifecycle steps and portable credential-free MCP definitions for external tools", async () => {
   const { validateLibrary } = await import("../scripts/validate.mjs");
   const directory = mkdtempSync(join(tmpdir(), "bc-whale-external-"));
