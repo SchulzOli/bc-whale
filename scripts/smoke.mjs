@@ -4,10 +4,10 @@
 //   --install  really install (CI); without it the setup is planned only and MCP servers are probed from the catalog.
 import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
+import { probeStdio as runStdioProbe } from "./smoke-probe.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
@@ -18,10 +18,6 @@ const allowBlocked = new Set(option("--allow-blocked", "").split(",").filter(Boo
 const reportFile = option("--report", join(root, "smoke-report.json"));
 const INPUTS = ["--input", "ORGANIZATION=bc-whale-smoke"];
 const PROBE_TIMEOUT_MS = Number(option("--probe-timeout-ms", "240000"));
-
-const sdk = createRequire(join(root, "packages", "whale", "package.json"));
-const { Client } = await import(pathToFileURL(sdk.resolve("@modelcontextprotocol/sdk/client/index.js")).href);
-const { StdioClientTransport } = await import(pathToFileURL(sdk.resolve("@modelcontextprotocol/sdk/client/stdio.js")).href);
 
 // A brand-new user: host files, plugin state, pipx and dotnet tools all live in this folder.
 const home = mkdtempSync(join(tmpdir(), "bc-whale-smoke-"));
@@ -91,22 +87,7 @@ function substitute(mcp) {
   return JSON.parse(JSON.stringify(mcp).replaceAll("{{ORGANIZATION}}", "bc-whale-smoke"));
 }
 
-async function probeStdio(server) {
-  const client = new Client({ name: "bc-whale-smoke", version: "1.0.0" });
-  let stderr = "";
-  const transport = new StdioClientTransport({ command: server.command, args: server.args ?? [], env, stderr: "pipe" });
-  transport.stderr?.on("data", (chunk) => (stderr = (stderr + chunk).slice(-2000)));
-  const timer = new Promise((_, reject) => setTimeout(() => reject(new Error(`no tool list within ${PROBE_TIMEOUT_MS / 1000}s`)), PROBE_TIMEOUT_MS));
-  try {
-    const { tools } = await Promise.race([client.connect(transport).then(() => client.listTools()), timer]);
-    if (!tools.length) throw new Error("server listed no tools");
-    return `${tools.length} tools`;
-  } catch (error) {
-    throw new Error(`${error.message}${stderr ? `; stderr: ${stderr.trim().slice(-400)}` : ""}`);
-  } finally {
-    await client.close().catch(() => {});
-  }
-}
+const probeStdio = (server) => runStdioProbe(server, env, PROBE_TIMEOUT_MS);
 
 async function probeHttp(server) {
   const response = await fetch(server.url, {

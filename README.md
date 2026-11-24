@@ -99,6 +99,9 @@ repository answers. VS Code extensions are skipped on hosted runners. Run it loc
 node scripts/smoke.mjs --allow-blocked copilot,code
 ```
 
+For slow MCP startup, `--probe-timeout-ms` sets the total stdio initialization and
+tool-discovery deadline (default: 240000 ms). A timeout remains a failed check.
+
 `--install` really installs, into a temporary profile with `COPILOT_HOME` pointing there.
 
 ## Develop
