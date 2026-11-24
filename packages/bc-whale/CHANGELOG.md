@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+- Find Arthurvdv.alcops-managed analyzers in the selected AL extension's `bin`
+  and `bin/Analyzers`, including platform-specific compiler layouts.
+- Filter container app inventories by exact app ID, name and installation state
+  through CLI and MCP. Missing inventory output is an explicit error.
+- Document the scoped initialization/publish workflow for existing containers.
+  Configured analyzers remain mandatory; no deployment bypass is added.
+
 ## 0.3.0
 
 - Upgrade validation accepts hash-pinned released baseline production packages;

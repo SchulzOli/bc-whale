@@ -21,6 +21,13 @@ The plugin contributes the `bc_whale` MCP server, the `al-developer` agent, and 
 `bc-whale-bugfix` skill. Restart the session after installation/update. Pass `repo`
 explicitly to MCP calls when the host's working directory is not the AL repository.
 
+For an existing container, initialize the selected project with `bc_whale_launch` and
+`bc_whale_symbols` (`fromTarget: true`, `copyToProjects: true`), then run
+`bc_whale_cycle` with `steps: ["build", "publish"]`. Verify the app with
+`bc_whale_container_apps` using `appId` and `installed: true`. Configured analyzers
+remain mandatory; supply missing analyzers from a trusted source. Run relevant tests
+separately when available.
+
 AL, Docker and cloud prerequisites still apply to the particular operations being
 used. The official AL MCP server is separate; use `runtime/cli.js almcp` or
 `mcp register --almcp` for symbol navigation. Do not register a second `bc_whale`
@@ -124,8 +131,11 @@ AL-Go defaults are respected: `enableCodeCop`, `enableUICop`, `enableAppSourceCo
 `enablePerTenantExtensionCop` (on by default for `PTE`), `rulesetFile`, `customCodeCops`, `failOn`, `country`.
 Every configured custom analyzer must resolve: missing analyzers now fail build/check instead of being skipped.
 Use `bc-whale analyzers status` / `bc_whale_analyzers` to see exact paths and hashes.
-`${analyzerFolder}` (case-insensitive) resolves against the selected altool folder; repo-provisioned analyzers
-in `.bc-whale/analyzers` and same-name assemblies in that compiler folder are fallback locations.
+`${analyzerFolder}` (case-insensitive) resolves against the selected AL extension's compiler folder,
+its `bin` folder and `bin/Analyzers`; repo-provisioned analyzers in `.bc-whale/analyzers` are also used.
+The [Arthurvdv.alcops](https://marketplace.visualstudio.com/items?itemName=Arthurvdv.alcops)
+VS Code extension can install the ALCops suite into the AL extension; run `ALCops: Install` if
+the assemblies are not present. Other analyzers, such as BusinessCentral.LinterCop, are separate.
 Provision the installed/trusted local ALCops suite with `bc-whale analyzers prepare --source <folder>`.
 All ALCops companion DLLs are copied together and a SHA256 manifest records their source. No automatic download
 or installation into the VS Code extension takes place. DLL availability is not proof of compatibility:

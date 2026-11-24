@@ -17,6 +17,15 @@ Use this agent to build, deploy and test AL apps in any BC repository (AL-Go, mu
 
 ## Workflow
 
+For an existing container and a requested app publish, use the exact project and target:
+`bc_whale_target_check`, `bc_whale_launch`, `bc_whale_symbols` with `fromTarget=true`
+and `copyToProjects=true`, then `bc_whale_cycle` with `steps=["build","publish"]`.
+Verify the installation with `bc_whale_container_apps` filtered by app ID and
+`installed=true`. Run relevant tests separately when available. Resolve missing configured
+analyzers from a trusted source; do not bypass them to make a deployment succeed.
+For ALCops, the installed `Arthurvdv.alcops` extension provides `ALCops: Install`.
+Other analyzers, including BusinessCentral.LinterCop, must be installed separately.
+
 1. `bc_whale_info` - understand projects, build order, dependencies, analyzers and targets.
 2. `bc_whale_symbols` - once per repo or after dependency changes (global feeds, no server needed).
    `bc_whale_analyzers` - resolve every configured analyzer; provision trusted local ALCops via `source` when needed.

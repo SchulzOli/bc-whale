@@ -131,6 +131,19 @@ describe("repo model", () => {
 });
 
 describe("helpers", () => {
+  it("filters container apps by exact app ID or name without hiding published versions", async () => {
+    const { filterContainerApps } = await import("./docker.js");
+    const apps = [
+      { Name: "InventoryMultipleFinance", AppId: ids.base, IsInstalled: true, Version: "29.0.0.0" },
+      { Name: "InventoryMultipleFinance", AppId: ids.base, IsInstalled: false, Version: "28.0.0.0" },
+      { Name: "Other", AppId: ids.ext, IsInstalled: true, Version: "1.0.0.0" },
+    ];
+    assert.deepEqual(filterContainerApps(apps, { appId: ids.base.toUpperCase() }), apps.slice(0, 2));
+    assert.deepEqual(filterContainerApps(apps, { appName: "inventorymultiplefinance", installed: true }), [apps[0]]);
+    assert.deepEqual(filterContainerApps(apps, { appName: "missing" }), []);
+    assert.deepEqual(filterContainerApps(apps, {}), apps);
+  });
+
   it("runs the Azure CLI batch launcher on Windows without spawn EINVAL", { skip: process.platform !== "win32" }, async () => {
     const { getAdminToken } = await import("./cloud.js");
     const root = mkdtempSync(join(tmpdir(), "bc-whale-azure-cli-"));
@@ -247,6 +260,33 @@ describe("helpers", () => {
       const before = captureInputs(repo, cfg, "tool");
       writeFileSync(join(prepared.destination, "ALCops.Common.dll"), "changed companion");
       assert.notEqual(captureInputs(repo, cfg, "tool").shared, before.shared);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+  it("finds VS Code ALCops analyzers beside and under the AL extension bin for platform-specific altool", async () => {
+    const { resolveAnalyzers } = await import("./analyzers.js");
+    const root = mkdtempSync(join(tmpdir(), "bc-whale-alcops-extension-"));
+    try {
+      mkdirSync(join(root, ".git")); app("App", root, "A", ids.base);
+      const bin = join(root, "al-extension", "bin");
+      const compiler = join(bin, "win32");
+      const analyzers = join(bin, "Analyzers");
+      mkdirSync(compiler, { recursive: true }); mkdirSync(analyzers);
+      writeFileSync(join(bin, "ALCops.ApplicationCop.dll"), "application");
+      writeFileSync(join(analyzers, "ALCops.LinterCop.dll"), "linter");
+      const repo = loadRepo(root);
+      const cfg = {
+        ...loadConfig(repo),
+        customAnalyzers: [
+          join(root, ".alcops", "ALCops.ApplicationCop.dll"),
+          join(root, "App", "${analyzerFolder}ALCops.LinterCop.dll"),
+        ],
+      };
+      const result = resolveAnalyzers(repo, cfg, compiler);
+      assert.equal(result.succeeded, true);
+      assert.deepEqual(result.resolved.map((item) => item.path), [
+        join(bin, "ALCops.ApplicationCop.dll"),
+        join(analyzers, "ALCops.LinterCop.dll"),
+      ]);
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
   it("extracts trailing JSON after log output", () => {
