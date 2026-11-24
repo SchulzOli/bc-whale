@@ -362,7 +362,11 @@ container
 for (const action of ["start", "stop", "restart", "remove"] as const) container.command(`${action} <name>`).action((name) => run(() => api.containers.action(name, action)));
 container.command("wait <name>").description("wait until the container is ready").action((name) => run(() => api.containers.wait(name, ctx().log)));
 container.command("logs <name>").option("--tail <n>", "lines", (v) => parseInt(v, 10), 200).action((name, o) => run(async () => { process.stdout.write((await api.containers.logs(name, o.tail)) + "\n"); }));
-container.command("apps <name>").description("installed apps").action((name) => run(() => api.containers.installedApps(name)));
+container.command("apps <name>").description("published and installed apps")
+  .option("--app-id <id>", "filter by exact app ID")
+  .option("--app-name <name>", "filter by exact app name")
+  .option("--installed", "only installed apps")
+  .action((name, o) => run(() => api.containers.installedApps(name, { appId: o.appId, appName: o.appName, installed: o.installed })));
 container
   .command("install-apps <name> [apps...]")
   .description("publish+install Microsoft apps from the container's artifact by name")

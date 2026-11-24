@@ -10,7 +10,7 @@ import type { Logger } from "./exec.js";
 const MAX_TEXT = 60_000;
 
 const server = new McpServer(
-  { name: "bc_whale", version: "0.2.1" },
+  { name: "bc_whale", version: "0.3.1" },
   {
     instructions: [
       "bc-whale covers the Business Central AL dev life cycle (multi-app repos) with altool only - never use BcContainerHelper.",
@@ -18,6 +18,8 @@ const server = new McpServer(
       "Every tool accepts 'repo' (absolute path of the repository or any folder inside it). Without it, BC_WHALE_REPO or the server cwd is used.",
       "Targets: bc_whale_target_list/add. Local containers: bc_whale_container_create (wait=false) then bc_whale_container_wait.",
       "Projects can be selected by app name, folder, app id or wildcard. Build output: <repo>/.bc-whale/out, symbols: <repo>/.bc-whale/packages.",
+      "For an existing container, select the exact project and target; use bc_whale_target_check, bc_whale_launch, bc_whale_symbols with fromTarget=true and copyToProjects=true, then bc_whale_cycle with steps build,publish. Verify using bc_whale_container_apps with appId and installed=true. Check for relevant tests separately.",
+      "Configured analyzers are required: resolve missing analyzers from a trusted source; do not silently bypass them or change source to overcome tooling failures.",
       "Profiling: bc_whale_profile_schedule on an authorized session, reproduce the slow activity during its window, then bc_whale_profile_collect using its id. Analyze existing local ZIP/CPU profiles with bc_whale_profile_analyze. Never automatically rerun workloads after empty captures.",
     ].join("\n"),
   },
@@ -333,7 +335,12 @@ tool(
 
 tool("bc_whale_container_logs", "Container logs (tail).", { name: z.string(), tail: z.number().int().optional() }, (a) => api.containers.logs(a.name, a.tail ?? 200));
 
-tool("bc_whale_container_apps", "Apps published/installed in the container.", { name: z.string() }, (a) => api.containers.installedApps(a.name));
+tool("bc_whale_container_apps", "Apps published/installed in the container. Filter by exact app ID or name to verify a specific app without returning the full inventory.", {
+  name: z.string(),
+  appId: z.string().uuid().optional(),
+  appName: z.string().min(1).optional(),
+  installed: z.boolean().optional(),
+}, (a) => api.containers.installedApps(a.name, { appId: a.appId, appName: a.appName, installed: a.installed }));
 
 tool(
   "bc_whale_container_install_apps",

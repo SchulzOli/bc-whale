@@ -414,14 +414,35 @@ Write-Output ('##RESULT##' + ($result | ConvertTo-Json -Compress))
   return line ? JSON.parse(line.slice(10)) : { raw: out };
 }
 
-export async function listInstalledApps(name: string) {
+export interface ContainerApp {
+  Name: string;
+  Publisher: string;
+  Version: string;
+  IsInstalled: boolean;
+  AppId: string;
+}
+
+export function filterContainerApps<T extends Pick<ContainerApp, "Name" | "AppId" | "IsInstalled">>(
+  apps: T[],
+  filters: { appId?: string; appName?: string; installed?: boolean },
+): T[] {
+  return apps.filter((app) =>
+    (filters.appId === undefined || app.AppId.toLowerCase() === filters.appId.toLowerCase()) &&
+    (filters.appName === undefined || app.Name.toLowerCase() === filters.appName.toLowerCase()) &&
+    (filters.installed === undefined || app.IsInstalled === filters.installed),
+  );
+}
+
+export async function listInstalledApps(name: string, filters: { appId?: string; appName?: string; installed?: boolean } = {}) {
   const out = await invokeInContainer(
     name,
     "Write-Output ('##RESULT##' + (@(Get-NAVAppInfo -ServerInstance BC -Tenant default -TenantSpecificProperties | Select-Object Name,Publisher,@{n='Version';e={\"$($_.Version)\"}},IsInstalled,@{n='AppId';e={\"$($_.AppId)\"}}) | ConvertTo-Json -Compress))",
   );
   const line = out.split(/\r?\n/).find((l) => l.startsWith("##RESULT##"));
-  const parsed = line ? JSON.parse(line.slice(10)) : [];
-  return Array.isArray(parsed) ? parsed : [parsed];
+  if (!line) throw new Error(`Container ${name} returned no app inventory result.`);
+  const parsed = JSON.parse(line.slice(10));
+  const apps: ContainerApp[] = Array.isArray(parsed) ? parsed : [parsed];
+  return filterContainerApps(apps, filters);
 }
 
 export async function importLicense(name: string, licenseFile: string, log: Logger = silentLogger) {
